@@ -78,6 +78,8 @@ class FeedbackRequired(PrivateError):
 class ChallengeError(PrivateError):
     pass
 
+Class ManualInputRequired(PrivateError):
+    pass
 
 class ChallengeRedirection(ChallengeError):
     pass
