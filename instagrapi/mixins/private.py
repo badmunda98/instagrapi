@@ -26,6 +26,7 @@ from instagrapi.exceptions import (
     TwoFactorRequired,
     UnknownError,
     VideoTooLongException,
+    ManualInputRequired
 )
 from instagrapi.utils import dumps, generate_signature
 
@@ -46,20 +47,24 @@ def manual_input_code(self, username: str, choice=None):
     str
         Code
     """
+    raise ManualInputRequired("Manual Code Input is Required")
+"""
     code = None
     while True:
         code = input(f"Enter code (6 digits) for {username} ({choice}): ").strip()
         if code and code.isdigit():
             break
     return code  # is not int, because it can start from 0
-
+"""
 
 def manual_change_password(self, username: str):
+    raise ManualInputRequired("Manual Password Insertion Required")
+"""
     pwd = None
     while not pwd:
         pwd = input(f"Enter password for {username}: ").strip()
     return pwd
-
+"""
 
 class PrivateRequestMixin:
     """
