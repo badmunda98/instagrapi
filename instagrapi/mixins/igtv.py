@@ -301,7 +301,7 @@ def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
         print(f'Generating thumbnail "{thumbnail}"...')
         cmd = f'ffmpeg -ss {duration/2} -an -s {width}x{height} -vframes 1 {thumbnail} -y -i'
         args = shlex.split(cmd)
-        args.append(path)
+        args.append(str(path))
         run_cmd(args)
     return thumbnail, width, height, duration
 
