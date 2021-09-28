@@ -299,21 +299,26 @@ def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
     if not thumbnail:
         thumbnail = f"{path}.jpg"
         print(f'Generating thumbnail "{thumbnail}"...')
-        cmd = f"ffmpeg -i {path} -ss {duration/2} -an -s {width}x{height} -vframes 1 {thumbnail} -y"
-        run_cmd(shlex.split(cmd))
+        cmd = f'ffmpeg -ss {duration/2} -an -s {width}x{height} -vframes 1 {thumbnail} -y -i'
+        args = shlex.split(cmd)
+        args.append(path)
+        run_cmd(args)
     return thumbnail, width, height, video.duration
 
 
 def run_cmd(args=[]) -> List:
     return subprocess.check_output(args).decode('utf-8')
 
+def get_sec(duration: str) -> str:
+    ts = duration.split('.')[0]
+    return sum(int(x) * 60 ** i for i, x in enumerate(reversed(ts.split(':'))))
 
 def get_data(file: Path) -> bool:
-    cmd = "ffprobe -v quiet -print_format json -show_streams"
+    cmd = 'ffprobe -v quiet -print_format json -show_streams'
     args = shlex.split(cmd)
     args.append(file)
     data = json.loads(run_cmd(args))
     height = data['streams'][0]['height']
     width = data['streams'][0]['width']
-    duration = float(data['streams'][-1]['duration'])
+    duration = get_sec(data['streams'][-1]['tags']['DURATION'])
     return height, width, duration
