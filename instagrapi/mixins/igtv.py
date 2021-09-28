@@ -1,3 +1,5 @@
+import subprocess
+import shlex
 import json
 import random
 import time
@@ -291,43 +293,27 @@ def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
     Tuple
         A tuple with (thumbail path, width, height, duration)
     """
-    try:
-        import moviepy.editor as mp
-    except ImportError:
-        raise Exception("Please install moviepy>=1.0.3 and retry")
 
     print(f'Analizing IGTV file "{path}"')
-    video = mp.VideoFileClip(str(path))
-    width, height = video.size
+    width, height, duration = get_data(path)
     if not thumbnail:
         thumbnail = f"{path}.jpg"
         print(f'Generating thumbnail "{thumbnail}"...')
-        video.save_frame(thumbnail, t=(video.duration / 2))
-        crop_thumbnail(thumbnail)
+        cmd = f"ffmpeg -i {path} -ss {duration/2} -an -s {width}x{height} -vframes 1 {thumbnail} -y"
+        run_cmd(shlex.split(cmd))
     return thumbnail, width, height, video.duration
 
 
-def crop_thumbnail(path: Path) -> bool:
-    """
-    Analyze and crop thumbnail if need
+def run_cmd(args=[]) -> List:
+    return subprocess.check_output(args).decode('utf-8')
 
-    Parameters
-    ----------
-    path: Path
-        Path to the video
 
-    Returns
-    -------
-    bool
-        A boolean value
-    """
-    im = Image.open(str(path))
-    width, height = im.size
-    offset = (height / 1.78) / 2
-    center = width / 2
-    # Crop the center of the image
-    im = im.crop((center - offset, 0, center + offset, height))
-    with open(path, "w") as fp:
-        im.save(fp)
-        im.close()
-    return True
+def get_data(file: Path) -> bool:
+    cmd = "ffprobe -v quiet -print_format json -show_streams"
+    args = shlex.split(cmd)
+    args.append(file)
+    data = json.loads(run_cmd(args))
+    height = data['streams'][0]['height']
+    width = data['streams'][0]['width']
+    duration = float(data['streams'][-1]['duration'])
+    return height, width, duration
