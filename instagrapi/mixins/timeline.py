@@ -9,14 +9,14 @@ class ReelsMixin:
     Helpers for Reels
     """
 
-    def reels(self, amount: int = 10, last_media_pk: int = 0) -> List[Media]:
+    async def reels(self, amount: int = 10, last_media_pk: int = 0) -> List[Media]:
         """
         Get connected reels media
 
         Parameters
         ----------
         amount: int, optional
-            Maximum number of media to return, default is 10
+            Maximum number of media to return, async default is 10
         last_media_pk: int, optional
             Last PK user has seen, function will return medias after this pk. Default is 0
         Returns
@@ -26,14 +26,14 @@ class ReelsMixin:
         """
         return self.reels_timeline_media("reels", amount, last_media_pk)
 
-    def explore_reels(self, amount: int = 10, last_media_pk: int = 0) -> List[Media]:
+    async def explore_reels(self, amount: int = 10, last_media_pk: int = 0) -> List[Media]:
         """
         Get discover reels media
 
         Parameters
         ----------
         amount: int, optional
-            Maximum number of media to return, default is 10
+            Maximum number of media to return, async default is 10
         last_media_pk: int, optional
             Last PK user has seen, function will return medias after this pk. Default is 0
         Returns
@@ -43,7 +43,7 @@ class ReelsMixin:
         """
         return self.reels_timeline_media("explore_reels", amount, last_media_pk)
 
-    def reels_timeline_media(
+    async def reels_timeline_media(
         self, collection_pk: str, amount: int = 10, last_media_pk: int = 0
     ) -> List[Media]:
         """
@@ -54,7 +54,7 @@ class ReelsMixin:
         collection_pk: str
             Unique identifier of a timeline
         amount: int, optional
-            Maximum number of media to return, default is 10
+            Maximum number of media to return, async default is 10
         last_media_pk: int, optional
             Last PK user has seen, function will return medias after this pk. Default is 0
 
@@ -76,7 +76,7 @@ class ReelsMixin:
             if len(total_items) >= float(amount):
                 return total_items[:amount]
             try:
-                result = self.private_request(
+                result = await self.private_request(
                     private_request_endpoint,
                     data = ' ',
                     params={"max_id": next_max_id},

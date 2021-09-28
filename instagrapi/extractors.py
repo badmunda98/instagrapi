@@ -27,7 +27,7 @@ from .utils import InstagramIdCodec, json_value
 MEDIA_TYPES_GQL = {"GraphImage": 1, "GraphVideo": 2, "GraphSidecar": 8, "StoryVideo": 2}
 
 
-def extract_media_v1(data):
+async def extract_media_v1(data):
     """Extract media from Private API"""
     media = deepcopy(data)
     if "video_versions" in media:
@@ -68,7 +68,7 @@ def extract_media_v1(data):
     )
 
 
-def extract_media_gql(data):
+async def extract_media_gql(data):
     """Extract media from GraphQL"""
     media = deepcopy(data)
     user = extract_user_short(media["owner"])
@@ -127,7 +127,7 @@ def extract_media_gql(data):
     )
 
 
-def extract_resource_v1(data):
+async def extract_resource_v1(data):
     if "video_versions" in data:
         data["video_url"] = sorted(
             data["video_versions"], key=lambda o: o["height"] * o["width"]
@@ -139,25 +139,25 @@ def extract_resource_v1(data):
     return Resource(**data)
 
 
-def extract_resource_gql(data):
+async def extract_resource_gql(data):
     data["media_type"] = MEDIA_TYPES_GQL[data["__typename"]]
     return Resource(pk=data["id"], thumbnail_url=data["display_url"], **data)
 
 
-def extract_usertag(data):
+async def extract_usertag(data):
     """Extract user tag"""
     x, y = data.get("position", [data.get("x"), data.get("y")])
     return Usertag(user=extract_user_short(data["user"]), x=x, y=y)
 
 
-def extract_user_short(data):
+async def extract_user_short(data):
     """Extract User Short info"""
     data["pk"] = data.get("id", data.get("pk", None))
     assert data["pk"], f'User without pk "{data}"'
     return UserShort(**data)
 
 
-def extract_user_gql(data):
+async def extract_user_gql(data):
     """For Public GraphQL API"""
     return User(
         pk=data["id"],
@@ -171,13 +171,13 @@ def extract_user_gql(data):
     )
 
 
-def extract_user_v1(data):
+async def extract_user_v1(data):
     """For Private API"""
     data["external_url"] = data.get("external_url") or None
     return User(**data)
 
 
-def extract_location(data):
+async def extract_location(data):
     """Extract location info"""
     if not data:
         return None
@@ -198,14 +198,14 @@ def extract_location(data):
     return Location(**data)
 
 
-def extract_comment(data):
+async def extract_comment(data):
     """Extract comment"""
     data["has_liked"] = data.get("has_liked_comment")
     data["like_count"] = data.get("comment_like_count")
     return Comment(**data)
 
 
-def extract_collection(data):
+async def extract_collection(data):
     """Extract collection for authorized account
     Example:
     {'collection_id': '17851406186124602',
@@ -219,12 +219,12 @@ def extract_collection(data):
     return Collection(**data)
 
 
-def extract_media_oembed(data):
+async def extract_media_oembed(data):
     """Return short version of Media"""
     return MediaOembed(**data)
 
 
-def extract_direct_thread(data):
+async def extract_direct_thread(data):
     data["messages"] = [extract_direct_message(item) for item in data["items"]]
     data["users"] = [extract_user_short(u) for u in data["users"]]
     if "inviter" in data:
@@ -235,17 +235,17 @@ def extract_direct_thread(data):
     return DirectThread(**data)
 
 
-def extract_direct_short_thread(data):
+async def extract_direct_short_thread(data):
     data["users"] = [extract_user_short(u) for u in data["users"]]
     data["id"] = data.get("thread_id")
     return DirectShortThread(**data)
 
 
-def extract_direct_response(data):
+async def extract_direct_response(data):
     return DirectResponse(**data)
 
 
-def extract_direct_message(data):
+async def extract_direct_message(data):
     data["id"] = data.get("item_id")
     if "media_share" in data:
         data["media_share"] = extract_media_v1(data["media_share"])
@@ -260,7 +260,7 @@ def extract_direct_message(data):
     return DirectMessage(**data)
 
 
-def extract_direct_media(data):
+async def extract_direct_media(data):
     media = deepcopy(data)
     if "video_versions" in media:
         # Select Best Quality by Resolutiuon
@@ -277,22 +277,22 @@ def extract_direct_media(data):
     return DirectMedia(**media)
 
 
-def extract_account(data):
+async def extract_account(data):
     data["external_url"] = data.get("external_url") or None
     return Account(**data)
 
 
-def extract_hashtag_gql(data):
+async def extract_hashtag_gql(data):
     data["media_count"] = data.get("edge_hashtag_to_media", {}).get("count")
     return Hashtag(**data)
 
 
-def extract_hashtag_v1(data):
+async def extract_hashtag_v1(data):
     data["allow_following"] = data.get("allow_following") == 1
     return Hashtag(**data)
 
 
-def extract_story_v1(data):
+async def extract_story_v1(data):
     """Extract story from Private API"""
     story = deepcopy(data)
     if "video_versions" in story:
@@ -321,7 +321,7 @@ def extract_story_v1(data):
     return Story(**story)
 
 
-def extract_story_gql(data):
+async def extract_story_gql(data):
     """Extract story from Public API"""
     story = deepcopy(data)
     if "video_resources" in story:

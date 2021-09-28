@@ -8,7 +8,7 @@ from Cryptodome.Random import get_random_bytes
 
 class PasswordMixin:
 
-    def password_encrypt(self, password):
+    async def password_encrypt(self, password):
         publickeyid, publickey = self.password_publickeys()
         session_key = get_random_bytes(32)
         iv = get_random_bytes(12)
@@ -32,7 +32,7 @@ class PasswordMixin:
         ]))
         return f"#PWD_INSTAGRAM:4:{timestamp}:{payload.decode()}"
 
-    def password_publickeys(self):
+    async def password_publickeys(self):
         resp = self.public.get('https://i.instagram.com/api/v1/qe/sync/')
         publickeyid = int(resp.headers.get('ig-set-password-encryption-key-id'))
         publickey = resp.headers.get('ig-set-password-encryption-pub-key')

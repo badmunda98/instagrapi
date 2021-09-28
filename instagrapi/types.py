@@ -4,7 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel, FilePath, HttpUrl, ValidationError, validator
 
 
-def validate_external_url(cls, v):
+async def validate_external_url(cls, v):
     if v is None or (v.startswith('http') and '://' in v) or isinstance(v, str):
         return v
     raise ValidationError('external_url must been URL or string')
@@ -297,7 +297,7 @@ class DirectThread(BaseModel):
     shh_mode_enabled: bool
     last_seen_at: dict
 
-    def is_seen(self, user_id: int):
+    async def is_seen(self, user_id: int):
         """Have I seen this thread?
         :param user_id: You account user_id
         """

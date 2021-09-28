@@ -23,7 +23,7 @@ class StoryBuilder:
     width = 720
     height = 1280
 
-    def __init__(
+    async def __init__(
         self,
         path: Path,
         caption: str = "",
@@ -38,11 +38,11 @@ class StoryBuilder:
         path: Path
             Path for a file
         caption: str, optional
-            Media caption, default value is ""
+            Media caption, async default value is ""
         mentions: List[StoryMention], optional
-            List of mentions to be tagged on this upload, default is empty list
+            List of mentions to be tagged on this upload, async default is empty list
         bgpath: Path
-            Path for a background image, default value is ""
+            Path for a background image, async default value is ""
 
         Returns
         -------
@@ -53,7 +53,7 @@ class StoryBuilder:
         self.mentions = mentions
         self.bgpath = Path(bgpath) if bgpath else None
 
-    def build_main(self, clip, max_duration: int = 0, font: str = 'Arial', fontsize: int = 100, color: str = 'white') -> StoryBuild:
+    async def build_main(self, clip, max_duration: int = 0, font: str = 'Arial', fontsize: int = 100, color: str = 'white') -> StoryBuild:
         """
         Build clip
 
@@ -62,7 +62,7 @@ class StoryBuilder:
         clip: (VideoFileClip, ImageClip)
             An object of either VideoFileClip or ImageClip
         max_duration: int, optional
-            Duration of the clip if a video clip, default value is 0
+            Duration of the clip if a video clip, async default value is 0
         font: str, optional
             Name of font for text clip
         fontsize: int, optional
@@ -143,14 +143,14 @@ class StoryBuilder:
                 paths.append(path)
         return StoryBuild(mentions=mentions, path=destination, paths=paths)
 
-    def video(self, max_duration: int = 0, font: str = 'Arial', fontsize: int = 100, color: str = 'white'):
+    async def video(self, max_duration: int = 0, font: str = 'Arial', fontsize: int = 100, color: str = 'white'):
         """
         Build CompositeVideoClip from source video
 
         Parameters
         ----------
         max_duration: int, optional
-            Duration of the clip if a video clip, default value is 0
+            Duration of the clip if a video clip, async default value is 0
         font: str, optional
             Name of font for text clip
         fontsize: int, optional
@@ -166,14 +166,14 @@ class StoryBuilder:
         clip = VideoFileClip(str(self.path), has_mask=True)
         return self.build_main(clip, max_duration, font, fontsize, color)
 
-    def photo(self, max_duration: int = 0, font: str = 'Arial', fontsize: int = 100, color: str = 'white'):
+    async def photo(self, max_duration: int = 0, font: str = 'Arial', fontsize: int = 100, color: str = 'white'):
         """
         Build CompositeVideoClip from source video
 
         Parameters
         ----------
         max_duration: int, optional
-            Duration of the clip if a video clip, default value is 0
+            Duration of the clip if a video clip, async default value is 0
         font: str, optional
             Name of font for text clip
         fontsize: int, optional

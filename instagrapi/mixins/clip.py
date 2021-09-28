@@ -22,7 +22,7 @@ class DownloadClipMixin:
     Helpers to download CLIP videos
     """
 
-    def clip_download(self, media_pk: int, folder: Path = "") -> str:
+    async def clip_download(self, media_pk: int, folder: Path = "") -> str:
         """
         Download CLIP video
 
@@ -31,7 +31,7 @@ class DownloadClipMixin:
         media_pk: int
             PK for the album you want to download
         folder: Path, optional
-            Directory in which you want to download the album, default is "" and will download the files to working
+            Directory in which you want to download the album, async default is "" and will download the files to working
                 directory.
 
         Returns
@@ -40,7 +40,7 @@ class DownloadClipMixin:
         """
         return self.video_download(media_pk, folder)
 
-    def clip_download_by_url(
+    async def clip_download_by_url(
         self, url: str, filename: str = "", folder: Path = ""
     ) -> str:
         """
@@ -51,7 +51,7 @@ class DownloadClipMixin:
         url: str
             URL to download media from
         folder: Path, optional
-            Directory in which you want to download the album, default is "" and will download the files to working
+            Directory in which you want to download the album, async default is "" and will download the files to working
                 directory.
 
         Returns
@@ -66,7 +66,7 @@ class UploadClipMixin:
     Helpers to upload CLIP videos
     """
 
-    def clip_upload(
+    async def clip_upload(
         self,
         path: Path,
         caption: str,
@@ -89,11 +89,11 @@ class UploadClipMixin:
         thumbnail: Path, optional
             Path to thumbnail for CLIP. Default value is None, and it generates a thumbnail
         usertags: List[Usertag], optional
-            List of users to be tagged on this upload, default is empty list.
+            List of users to be tagged on this upload, async default is empty list.
         location: Location, optional
-            Location tag for this upload, default is none
+            Location tag for this upload, async default is none
         configure_timeout: int
-            Timeout between attempt to configure media (set caption, etc), default is 10
+            Timeout between attempt to configure media (set caption, etc), async default is 10
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -196,7 +196,7 @@ class UploadClipMixin:
                     return extract_media_v1(media)
         raise ClipConfigureError(response=self.last_response, **self.last_json)
 
-    def clip_configure(
+    async def clip_configure(
         self,
         upload_id: str,
         thumbnail: Path,
@@ -227,9 +227,9 @@ class UploadClipMixin:
         caption: str
             Media caption
         usertags: List[Usertag], optional
-            List of users to be tagged on this upload, default is empty list.
+            List of users to be tagged on this upload, async default is empty list.
         location: Location, optional
-            Location tag for this upload, default is None
+            Location tag for this upload, async default is None
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -264,14 +264,14 @@ class UploadClipMixin:
             "poster_frame_index": 70,
             **extra_data
         }
-        return self.private_request(
+        return await self.private_request(
             "media/configure_to_clips/?video=1",
             self.with_default_data(data),
             with_signature=True,
         )
 
 
-def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
+async def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
     """
     Analyze and crop thumbnail if need
 
@@ -303,7 +303,7 @@ def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
     return thumbnail, width, height, video.duration
 
 
-def crop_thumbnail(path: Path) -> bool:
+async def crop_thumbnail(path: Path) -> bool:
     """
     Analyze and crop thumbnail if need
 

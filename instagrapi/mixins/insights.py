@@ -30,7 +30,7 @@ class InsightsMixin:
     Helper class to get insights
     """
 
-    def insights_media_feed_all(
+    async def insights_media_feed_all(
         self,
         post_type: POST_TYPE = "ALL",
         time_frame: TIME_FRAME = "TWO_YEARS",
@@ -44,15 +44,15 @@ class InsightsMixin:
         Parameters
         ----------
         post_type: str, optional
-            Types of posts, default is "ALL"
+            Types of posts, async default is "ALL"
         time_frame: str, optional
-            Time frame to pull media insights, default is "TWO_YEARS"
+            Time frame to pull media insights, async default is "TWO_YEARS"
         data_ordering: str, optional
-            Ordering strategy for the data, default is "REACH_COUNT"
+            Ordering strategy for the data, async default is "REACH_COUNT"
         count: int, optional
-            Max media count for retrieving, default is 0
+            Max media count for retrieving, async default is 0
         sleep: int, optional
-            Timeout between pages iterations, default is 2
+            Timeout between pages iterations, async default is 2
 
         Returns
         -------
@@ -74,7 +74,7 @@ class InsightsMixin:
             "locale": "en_US",
             "vc_policy": "insights_policy",
             "strip_nulls": False,
-            "strip_defaults": False,
+            "strip_async defaults": False,
         }
         query_params = {
             "IgInsightsGridMediaImage_SIZE": 480,
@@ -90,7 +90,7 @@ class InsightsMixin:
         while True:
             if cursor:
                 query_params["cursor"] = cursor
-            result = self.private_request(
+            result = await self.private_request(
                 "ads/graphql/",
                 self.with_query_params(data, query_params),
             )
@@ -121,7 +121,7 @@ class InsightsMixin:
     Helpers for getting insights for media
     """
 
-    def insights_account(self) -> Dict:
+    async def insights_account(self) -> Dict:
         """
         Get insights for account
 
@@ -137,7 +137,7 @@ class InsightsMixin:
             "locale": "en_US",
             "vc_policy": "insights_policy",
             "strip_nulls": False,
-            "strip_defaults": False,
+            "strip_async defaults": False,
         }
         query_params = {
             "IgInsightsGridMediaImage_SIZE": 360,
@@ -147,7 +147,7 @@ class InsightsMixin:
             "query_params": {"access_token": "", "id": self.user_id},
         }
 
-        result = self.private_request(
+        result = await self.private_request(
             "ads/graphql/",
             self.with_query_params(data, query_params),
         )
@@ -156,7 +156,7 @@ class InsightsMixin:
             raise UserError("Account is not business account", **self.last_json)
         return res
 
-    def insights_media(self, media_pk: int) -> Dict:
+    async def insights_media(self, media_pk: int) -> Dict:
         """
         Get insights data for media
 
@@ -178,13 +178,13 @@ class InsightsMixin:
             "locale": "en_US",
             "vc_policy": "insights_policy",
             "strip_nulls": False,
-            "strip_defaults": False,
+            "strip_async defaults": False,
         }
         query_params = {
             "query_params": {"access_token": "", "id": media_pk},
         }
         try:
-            result = self.private_request(
+            result = await self.private_request(
                 "ads/graphql/",
                 self.with_query_params(data, query_params),
             )

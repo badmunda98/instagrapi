@@ -67,13 +67,13 @@ class Client(
     proxy = None
     logger = logging.getLogger("instagrapi")
 
-    def __init__(self, settings: dict = {}, proxy: str = None, **kwargs):
+    async def __init__(self, settings: dict = {}, proxy: str = None, **kwargs):
         super().__init__(**kwargs)
         self.settings = settings
         self.set_proxy(proxy)
         self.init()
 
-    def set_proxy(self, dsn: str):
+    async def set_proxy(self, dsn: str):
         if dsn:
             assert isinstance(
                 dsn, str

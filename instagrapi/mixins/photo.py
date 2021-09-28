@@ -40,7 +40,7 @@ class DownloadPhotoMixin:
     Helpers for downloading photo
     """
 
-    def photo_download(self, media_pk: int, folder: Path = "") -> Path:
+    async def photo_download(self, media_pk: int, folder: Path = "") -> Path:
         """
         Download photo using media pk
 
@@ -49,7 +49,7 @@ class DownloadPhotoMixin:
         media_pk: int
             Unique Media ID
         folder: Path, optional
-            Directory in which you want to download the album, default is "" and will download the files to working
+            Directory in which you want to download the album, async default is "" and will download the files to working
                 directory
 
         Returns
@@ -64,7 +64,7 @@ class DownloadPhotoMixin:
         )
         return self.photo_download_by_url(media.thumbnail_url, filename, folder)
 
-    def photo_download_by_url(
+    async def photo_download_by_url(
         self, url: str, filename: str = "", folder: Path = ""
     ) -> Path:
         """
@@ -77,7 +77,7 @@ class DownloadPhotoMixin:
         filename: str, optional
             Filename for the media
         folder: Path, optional
-            Directory in which you want to download the album, default is "" and will download the files to working
+            Directory in which you want to download the album, async default is "" and will download the files to working
                 directory
 
         Returns
@@ -101,7 +101,7 @@ class UploadPhotoMixin:
     Helpers for downloading photo
     """
 
-    def photo_rupload(
+    async def photo_rupload(
         self, path: Path, upload_id: str = "", to_album: bool = False
     ) -> tuple:
         """
@@ -172,7 +172,7 @@ class UploadPhotoMixin:
             width, height = im.size
         return upload_id, width, height
 
-    def photo_upload(
+    async def photo_upload(
         self,
         path: Path,
         caption: str,
@@ -193,9 +193,9 @@ class UploadPhotoMixin:
         upload_id: str, optional
             Unique upload_id (String). When None, then generate automatically. Example from video.video_configure
         usertags: List[Usertag], optional
-            List of users to be tagged on this upload, default is empty list.
+            List of users to be tagged on this upload, async default is empty list.
         location: Location, optional
-            Location tag for this upload, default is None
+            Location tag for this upload, async default is None
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -220,7 +220,7 @@ class UploadPhotoMixin:
             response=self.last_response, **self.last_json
         )
 
-    def photo_configure(
+    async def photo_configure(
         self,
         upload_id: str,
         width: int,
@@ -244,9 +244,9 @@ class UploadPhotoMixin:
         caption: str
             Media caption
         usertags: List[Usertag], optional
-            List of users to be tagged on this upload, default is empty list.
+            List of users to be tagged on this upload, async default is empty list.
         location: Location, optional
-            Location tag for this upload, default is None
+            Location tag for this upload, async default is None
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -285,9 +285,9 @@ class UploadPhotoMixin:
             "extra": {"source_width": width, "source_height": height},
             **extra_data
         }
-        return self.private_request("media/configure/", self.with_default_data(data))
+        return await self.private_request("media/configure/", self.with_default_data(data))
 
-    def photo_upload_to_story(
+    async def photo_upload_to_story(
         self,
         path: Path,
         caption: str = "",
@@ -311,15 +311,15 @@ class UploadPhotoMixin:
         upload_id: str, optional
             Unique upload_id (String). When None, then generate automatically. Example from video.video_configure
         mentions: List[StoryMention], optional
-            List of mentions to be tagged on this upload, default is empty list.
+            List of mentions to be tagged on this upload, async default is empty list.
         locations: List[StoryLocation], optional
-            List of locations to be tagged on this upload, default is empty list.
+            List of locations to be tagged on this upload, async default is empty list.
         links: List[StoryLink]
             URLs for Swipe Up
         hashtags: List[StoryHashtag], optional
-            List of hashtags to be tagged on this upload, default is empty list.
+            List of hashtags to be tagged on this upload, async default is empty list.
         stickers: List[StorySticker], optional
-            List of stickers to be tagged on this upload, default is empty list.
+            List of stickers to be tagged on this upload, async default is empty list.
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -359,7 +359,7 @@ class UploadPhotoMixin:
             response=self.last_response, **self.last_json
         )
 
-    def photo_configure_to_story(
+    async def photo_configure_to_story(
         self,
         upload_id: str,
         width: int,
@@ -386,15 +386,15 @@ class UploadPhotoMixin:
         caption: str
             Media caption
         mentions: List[StoryMention], optional
-            List of mentions to be tagged on this upload, default is empty list.
+            List of mentions to be tagged on this upload, async default is empty list.
         locations: List[StoryLocation], optional
-            List of locations to be tagged on this upload, default is empty list.
+            List of locations to be tagged on this upload, async default is empty list.
         links: List[StoryLink]
             URLs for Swipe Up
         hashtags: List[StoryHashtag], optional
-            List of hashtags to be tagged on this upload, default is empty list.
+            List of hashtags to be tagged on this upload, async default is empty list.
         stickers: List[StorySticker], optional
-            List of stickers to be tagged on this upload, default is empty list.
+            List of stickers to be tagged on this upload, async default is empty list.
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -421,7 +421,7 @@ class UploadPhotoMixin:
             "imported_taken_at": (timestamp - 3 * 24 * 3600),  # 3 days ago
             "caption": caption,
             "capture_type": "normal",
-            "rich_text_format_types": '["default"]',
+            "rich_text_format_types": '["async default"]',
             "upload_id": upload_id,
             "client_timestamp": str(timestamp),
             "device": self.device,
@@ -510,6 +510,6 @@ class UploadPhotoMixin:
         data["tap_models"] = dumps(tap_models)
         data["static_models"] = dumps(static_models)
         data["story_sticker_ids"] = dumps(story_sticker_ids)
-        return self.private_request(
+        return await self.private_request(
             "media/configure_to_story/", self.with_default_data(data)
         )

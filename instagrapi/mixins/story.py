@@ -20,7 +20,7 @@ from instagrapi.types import Story, UserShort
 class StoryMixin:
     _stories_cache = {}  # pk -> object
 
-    def story_pk_from_url(self, url: str) -> int:
+    async def story_pk_from_url(self, url: str) -> int:
         """
         Get Story (media) PK from URL
 
@@ -42,11 +42,11 @@ class StoryMixin:
         parts = [p for p in path.split("/") if p and p.isdigit()]
         return int(parts[0])
 
-    # def story_info_gql(self, story_pk: int):
+    # async def story_info_gql(self, story_pk: int):
     #     # GQL havent video_url :-(
     #     return self.media_info_gql(self, int(story_pk))
 
-    def story_info_v1(self, story_pk: int) -> Story:
+    async def story_info_v1(self, story_pk: int) -> Story:
         """
         Get Story by pk or id
 
@@ -70,7 +70,7 @@ class StoryMixin:
             return deepcopy(self._stories_cache[story_pk])
         raise StoryNotFound(story_pk=story_pk, user_id=user_id)
 
-    def story_info(self, story_pk: int, use_cache: bool = True) -> Story:
+    async def story_info(self, story_pk: int, use_cache: bool = True) -> Story:
         """
         Get Story by pk or id
 
@@ -79,7 +79,7 @@ class StoryMixin:
         story_pk: int
             Unique identifier of the story
         use_cache: bool, optional
-            Whether or not to use information from cache, default value is True
+            Whether or not to use information from cache, async default value is True
 
         Returns
         -------
@@ -91,7 +91,7 @@ class StoryMixin:
             self._stories_cache[story_pk] = story
         return deepcopy(self._stories_cache[story_pk])
 
-    def story_delete(self, story_pk: int) -> bool:
+    async def story_delete(self, story_pk: int) -> bool:
         """
         Delete story
 
@@ -110,7 +110,7 @@ class StoryMixin:
         self._stories_cache.pop(self.media_pk(media_id), None)
         return self.media_delete(media_id)
 
-    def users_stories_gql(self, user_ids: List[int]) -> List[UserShort]:
+    async def users_stories_gql(self, user_ids: List[int]) -> List[UserShort]:
         """
         Get a user's stories (Public API)
 
@@ -125,7 +125,7 @@ class StoryMixin:
         """
         self.inject_sessionid_to_public()
 
-        def _userid_chunks():
+        async def _userid_chunks():
             assert user_ids is not None
             user_ids_per_query = 50
             for i in range(0, len(user_ids), user_ids_per_query):
@@ -148,7 +148,7 @@ class StoryMixin:
             users.append(user)
         return users
 
-    def user_stories_gql(self, user_id: int, amount: int = None) -> List[UserShort]:
+    async def user_stories_gql(self, user_id: int, amount: int = None) -> List[UserShort]:
         """
         Get a user's stories (Public API)
 
@@ -156,7 +156,7 @@ class StoryMixin:
         ----------
         user_id: int
         amount: int, optional
-            Maximum number of story to return, default is all
+            Maximum number of story to return, async default is all
 
         Returns
         -------
@@ -169,7 +169,7 @@ class StoryMixin:
             stories = stories[:amount]
         return stories
 
-    def user_stories_v1(self, user_id: int, amount: int = None) -> List[Story]:
+    async def user_stories_v1(self, user_id: int, amount: int = None) -> List[Story]:
         """
         Get a user's stories (Private API)
 
@@ -177,7 +177,7 @@ class StoryMixin:
         ----------
         user_id: int
         amount: int, optional
-            Maximum number of story to return, default is all
+            Maximum number of story to return, async default is all
 
         Returns
         -------
@@ -188,7 +188,7 @@ class StoryMixin:
             "supported_capabilities_new": json.dumps(config.SUPPORTED_CAPABILITIES)
         }
         user_id = int(user_id)
-        reel = self.private_request(f"feed/user/{user_id}/story/", params=params).get("reel") or {}
+        reel = await self.private_request(f"feed/user/{user_id}/story/", params=params).get("reel") or {}
         stories = []
         for item in reel.get("items", []):
             stories.append(extract_story_v1(item))
@@ -196,7 +196,7 @@ class StoryMixin:
             stories = stories[:int(amount)]
         return stories
 
-    def user_stories(self, user_id: int, amount: int = None) -> List[Story]:
+    async def user_stories(self, user_id: int, amount: int = None) -> List[Story]:
         """
         Get a user's stories
 
@@ -204,7 +204,7 @@ class StoryMixin:
         ----------
         user_id: int
         amount: int, optional
-            Maximum number of story to return, default is all
+            Maximum number of story to return, async default is all
 
         Returns
         -------
@@ -220,7 +220,7 @@ class StoryMixin:
         except Exception:
             return self.user_stories_v1(user_id, amount)
 
-    def story_seen(self, story_pks: List[int], skipped_story_pks: List[int] = []):
+    async def story_seen(self, story_pks: List[int], skipped_story_pks: List[int] = []):
         """
         Mark a story as seen
 
@@ -238,7 +238,7 @@ class StoryMixin:
             [self.media_id(mid) for mid in skipped_story_pks]
         )
 
-    def story_download(self, story_pk: int, filename: str = "", folder: Path = "") -> Path:
+    async def story_download(self, story_pk: int, filename: str = "", folder: Path = "") -> Path:
         """
         Download story media by media_type
 
@@ -256,7 +256,7 @@ class StoryMixin:
         url = story.thumbnail_url if story.media_type == 1 else story.video_url
         return self.story_download_by_url(url, filename, folder)
 
-    def story_download_by_url(self, url: str, filename: str = "", folder: Path = "") -> Path:
+    async def story_download_by_url(self, url: str, filename: str = "", folder: Path = "") -> Path:
         """
         Download story media using URL
 
@@ -267,7 +267,7 @@ class StoryMixin:
         filename: str, optional
             Filename for the media
         folder: Path, optional
-            Directory in which you want to download the album, default is "" and will download the files to working
+            Directory in which you want to download the album, async default is "" and will download the files to working
                 directory
 
         Returns

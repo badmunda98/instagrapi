@@ -34,13 +34,13 @@ class PublicRequestMixin:
     request_logger = logging.getLogger("public_request")
     request_timeout = 1
 
-    def __init__(self, *args, **kwargs):
+    async def __init__(self, *args, **kwargs):
         self.public = requests.Session()
         self.public.headers.update(
             {
                 "Connection": "Keep-Alive",
                 "Accept": "*/*",
-                "Accept-Encoding": "gzip,deflate",
+                "Accept-Encoding": "gzip,async deflate",
                 "Accept-Language": "en-US",
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15",
             }
@@ -48,7 +48,7 @@ class PublicRequestMixin:
         self.request_timeout = kwargs.pop("request_timeout", self.request_timeout)
         super().__init__(*args, **kwargs)
 
-    def public_request(
+    async def public_request(
         self,
         url,
         data=None,
@@ -88,7 +88,7 @@ class PublicRequestMixin:
                     raise e
                 continue
 
-    def _send_public_request(
+    async def _send_public_request(
         self, url, data=None, params=None, headers=None, return_json=False
     ):
         self.public_requests_count += 1
@@ -162,7 +162,7 @@ class PublicRequestMixin:
         except requests.ConnectionError as e:
             raise ClientConnectionError("{} {}".format(e.__class__.__name__, str(e)))
 
-    def public_a1_request(self, endpoint, data=None, params=None, headers=None):
+    async def public_a1_request(self, endpoint, data=None, params=None, headers=None):
         url = self.PUBLIC_API_URL + endpoint.lstrip("/")
         if params:
             params.update({"__a": 1})
@@ -183,7 +183,7 @@ class PublicRequestMixin:
                 )
             raise e
 
-    def public_graphql_request(
+    async def public_graphql_request(
         self,
         variables,
         query_hash=None,
@@ -237,7 +237,7 @@ class PublicRequestMixin:
 
 
 class TopSearchesPublicMixin:
-    def top_search(self, query):
+    async def top_search(self, query):
         """Anonymous IG search request"""
         url = "https://www.instagram.com/web/search/topsearch/"
         params = {
@@ -251,7 +251,7 @@ class TopSearchesPublicMixin:
 
 
 class ProfilePublicMixin:
-    def location_feed(self, location_id, count=16, end_cursor=None):
+    async def location_feed(self, location_id, count=16, end_cursor=None):
         if count > 50:
             raise ValueError("Count cannot be greater than 50")
         variables = {
@@ -265,7 +265,7 @@ class ProfilePublicMixin:
         )
         return data["location"]
 
-    def profile_related_info(self, profile_id):
+    async def profile_related_info(self, profile_id):
         variables = {
             "user_id": profile_id,
             "include_chaining": True,

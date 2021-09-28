@@ -4,7 +4,7 @@ from instagrapi.utils import dumps
 class BloksMixin:
     bloks_versioning_id = ""
 
-    def bloks_action(self, action: str, data: dict) -> bool:
+    async def bloks_action(self, action: str, data: dict) -> bool:
         """Performing actions for bloks
 
         Parameters
@@ -18,10 +18,10 @@ class BloksMixin:
         -------
         bool
         """
-        result = self.private_request(f"bloks/apps/{action}/", self.with_default_data(data))
+        result = await self.private_request(f"bloks/apps/{action}/", self.with_default_data(data))
         return result["status"] == "ok"
 
-    def bloks_change_password(self, password: str, challenge_context: dict) -> bool:
+    async def bloks_change_password(self, password: str, challenge_context: dict) -> bool:
         """
         Change password for challenge
 

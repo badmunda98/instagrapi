@@ -15,7 +15,7 @@ class AccountMixin:
     Helper class to manage your account
     """
 
-    def reset_password(self, username: str) -> Dict:
+    async def reset_password(self, username: str) -> Dict:
         """
         Reset your password
 
@@ -32,7 +32,7 @@ class AccountMixin:
                 "x-csrftoken": gen_token(),
                 "Connection": "Keep-Alive",
                 "Accept": "*/*",
-                "Accept-Encoding": "gzip,deflate",
+                "Accept-Encoding": "gzip,async deflate",
                 "Accept-Language": "en-US",
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15",
             },
@@ -45,7 +45,7 @@ class AccountMixin:
                 raise ClientLoginRequired(e, response=response)
             raise ClientError(e, response=response)
 
-    def account_info(self) -> Account:
+    async def account_info(self) -> Account:
         """
         Fetch your account info
 
@@ -54,10 +54,10 @@ class AccountMixin:
         Account
             An object of Account class
         """
-        result = self.private_request("accounts/current_user/?edit=true")
+        result = await self.private_request("accounts/current_user/?edit=true")
         return extract_account(result["user"])
 
-    def account_security_info(self) -> dict:
+    async def account_security_info(self) -> dict:
         """
         Fetch your account security info
 
@@ -80,9 +80,9 @@ class AccountMixin:
             "can_add_additional_totp_seed": false
             }
         """
-        return self.private_request("accounts/account_security_info/", self.with_default_data({}))
+        return await self.private_request("accounts/account_security_info/", self.with_default_data({}))
 
-    def account_edit(self, **data: Dict) -> Account:
+    async def account_edit(self, **data: Dict) -> Account:
         """
         Edit your profile (authorized account)
 
@@ -113,13 +113,13 @@ class AccountMixin:
         # Instagram original field-name for full user name is "first_name"
         data["first_name"] = data.pop("full_name")
         # Biography with entities (markup)
-        result = self.private_request("accounts/edit_profile/", self.with_default_data(data))
+        result = await self.private_request("accounts/edit_profile/", self.with_default_data(data))
         biography = data.get("biography")
         if biography:
             self.account_set_biography(biography)
         return extract_account(result["user"])
 
-    def account_set_biography(self, biography: str) -> bool:
+    async def account_set_biography(self, biography: str) -> bool:
         """
         Set biography with entities (markup)
 
@@ -137,10 +137,10 @@ class AccountMixin:
             "logged_in_uids": dumps([str(self.user_id)]),
             "raw_text": biography
         }
-        result = self.private_request("accounts/set_biography/", self.with_default_data(data))
+        result = await self.private_request("accounts/set_biography/", self.with_default_data(data))
         return result["status"] == "ok"
 
-    def account_change_picture(self, path: Path) -> UserShort:
+    async def account_change_picture(self, path: Path) -> UserShort:
         """
         Change photo for your profile (authorized account)
 
@@ -155,13 +155,13 @@ class AccountMixin:
             An object of UserShort class
         """
         upload_id, _, _ = self.photo_rupload(Path(path))
-        result = self.private_request(
+        result = await self.private_request(
             "accounts/change_profile_picture/",
             self.with_default_data({"use_fbuploader": True, "upload_id": upload_id}),
         )
         return extract_user_short(result["user"])
 
-    def news_inbox_v1(self, mark_as_seen: bool = False) -> dict:
+    async def news_inbox_v1(self, mark_as_seen: bool = False) -> dict:
         """
         Get old and new stories as is
 
@@ -174,7 +174,7 @@ class AccountMixin:
         -------
         dict
         """
-        return self.private_request(
+        return await self.private_request(
             "news/inbox/",
             params={'mark_as_seen': mark_as_seen}
         )

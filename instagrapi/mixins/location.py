@@ -15,7 +15,7 @@ class LocationMixin:
     Helper class to get location
     """
 
-    def location_search(self, lat: float, lng: float) -> List[Location]:
+    async def location_search(self, lat: float, lng: float) -> List[Location]:
         """
         Get locations using lat and long
 
@@ -37,7 +37,7 @@ class LocationMixin:
             # rankToken=c544eea5-726b-4091-a916-a71a35a76474 - self.uuid?
             # fb_access_token=EAABwzLixnjYBABK2YBFkT...pKrjju4cijEGYtcbIyCSJ0j4ZD
         }
-        result = self.private_request("location_search/", params=params)
+        result = await self.private_request("location_search/", params=params)
         locations = []
         for venue in result["venues"]:
             if "lat" not in venue:
@@ -46,7 +46,7 @@ class LocationMixin:
             locations.append(extract_location(venue))
         return locations
 
-    def location_complete(self, location: Location) -> Location:
+    async def location_complete(self, location: Location) -> Location:
         """
         Smart complete of location
 
@@ -84,7 +84,7 @@ class LocationMixin:
                 location.pk = location.external_id
         return location
 
-    def location_build(self, location: Location) -> str:
+    async def location_build(self, location: Location) -> str:
         """
         Build correct location data
 
@@ -114,7 +114,7 @@ class LocationMixin:
         }
         return json.dumps(data, separators=(",", ":"))
 
-    def location_info_a1(self, location_pk: int) -> Location:
+    async def location_info_a1(self, location_pk: int) -> Location:
         """
         Get a location using location pk
 
@@ -136,7 +136,7 @@ class LocationMixin:
         except ClientNotFoundError:
             raise LocationNotFound(location_pk=location_pk)
 
-    def location_info_v1(self, location_pk: int) -> Location:
+    async def location_info_v1(self, location_pk: int) -> Location:
         """
         Get a location using location pk
 
@@ -150,10 +150,10 @@ class LocationMixin:
         Location
             An object of Location
         """
-        result = self.private_request(f"locations/{location_pk}/location_info/")
+        result = await self.private_request(f"locations/{location_pk}/location_info/")
         return extract_location(result)
 
-    def location_info(self, location_pk: int) -> Location:
+    async def location_info(self, location_pk: int) -> Location:
         """
         Get a location using location pk
 
@@ -177,7 +177,7 @@ class LocationMixin:
             location = self.location_info_v1(location_pk)
         return location
 
-    def location_medias_a1_chunk(
+    async def location_medias_a1_chunk(
         self, location_pk: int, max_amount: int = 24, sleep: float = 0.5, tab_key: str = "", max_id: str = None
     ) -> Tuple[List[Media], str]:
         """
@@ -188,13 +188,13 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         max_amount: int, optional
-            Maximum number of media to return, default is 24
+            Maximum number of media to return, async default is 24
         sleep: float, optional
-            Timeout between requests, default is 0.5
+            Timeout between requests, async default is 0.5
         tab_key: str, optional
-            Tab Key, default value is ""
+            Tab Key, async default value is ""
         end_cursor: str, optional
-            End Cursor, default value is None
+            End Cursor, async default value is None
 
         Returns
         -------
@@ -231,7 +231,7 @@ class LocationMixin:
             time.sleep(sleep)
         return medias, end_cursor
 
-    def location_medias_a1(
+    async def location_medias_a1(
         self, location_pk: int, amount: int = 24, sleep: float = 0.5, tab_key: str = ""
     ) -> List[Media]:
         """
@@ -242,11 +242,11 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         amount: int, optional
-            Maximum number of media to return, default is 24
+            Maximum number of media to return, async default is 24
         sleep: float, optional
-            Timeout between requests, default is 0.5
+            Timeout between requests, async default is 0.5
         tab_key: str, optional
-            Tab Key, default value is ""
+            Tab Key, async default value is ""
 
         Returns
         -------
@@ -259,7 +259,7 @@ class LocationMixin:
             medias = medias[:amount]
         return medias
 
-    def location_medias_v1_chunk(
+    async def location_medias_v1_chunk(
         self, location_pk: int, max_amount: int = 63, tab_key: str = "", max_id: str = None
     ) -> Tuple[List[Media], str]:
         """
@@ -270,11 +270,11 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         max_amount: int, optional
-            Maximum number of media to return, default is 27
+            Maximum number of media to return, async default is 27
         tab_key: str, optional
-            Tab Key, default value is ""
+            Tab Key, async default value is ""
         max_id: str
-            Max ID, default value is None
+            Max ID, async default value is None
 
         Returns
         -------
@@ -289,7 +289,7 @@ class LocationMixin:
         }
         medias = []
         while True:
-            result = self.private_request(
+            result = await self.private_request(
                 f"locations/{location_pk}/sections/",
                 params={"max_id": max_id} if max_id else {},
                 data=data,
@@ -309,7 +309,7 @@ class LocationMixin:
             max_id = result["next_max_id"]
         return medias, max_id
 
-    def location_medias_v1(
+    async def location_medias_v1(
         self, location_pk: int, amount: int = 63, tab_key: str = ""
     ) -> List[Media]:
         """
@@ -320,9 +320,9 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         amount: int, optional
-            Maximum number of media to return, default is 63
+            Maximum number of media to return, async default is 63
         tab_key: str, optional
-            Tab Key, default value is ""
+            Tab Key, async default value is ""
 
         Returns
         -------
@@ -335,7 +335,7 @@ class LocationMixin:
             medias = medias[:amount]
         return medias
 
-    def location_medias_top_a1(
+    async def location_medias_top_a1(
         self, location_pk: int, amount: int = 9, sleep: float = 0.5
     ) -> List[Media]:
         """
@@ -346,9 +346,9 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         amount: int, optional
-            Maximum number of media to return, default is 9
+            Maximum number of media to return, async default is 9
         sleep: float, optional
-            Timeout between requests, default is 0.5
+            Timeout between requests, async default is 0.5
 
         Returns
         -------
@@ -359,7 +359,7 @@ class LocationMixin:
             location_pk, amount, sleep=sleep, tab_key="edge_location_to_top_posts"
         )
 
-    def location_medias_top_v1(
+    async def location_medias_top_v1(
         self, location_pk: int, amount: int = 21
     ) -> List[Media]:
         """
@@ -370,7 +370,7 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         amount: int, optional
-            Maximum number of media to return, default is 21
+            Maximum number of media to return, async default is 21
 
         Returns
         -------
@@ -379,7 +379,7 @@ class LocationMixin:
         """
         return self.location_medias_v1(location_pk, amount, tab_key="ranked")
 
-    def location_medias_top(
+    async def location_medias_top(
         self, location_pk: int, amount: int = 27, sleep: float = 0.5
     ) -> List[Media]:
         """
@@ -390,9 +390,9 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         amount: int, optional
-            Maximum number of media to return, default is 27
+            Maximum number of media to return, async default is 27
         sleep: float, optional
-            Timeout between requests, default is 0.5
+            Timeout between requests, async default is 0.5
 
         Returns
         -------
@@ -408,7 +408,7 @@ class LocationMixin:
             #     self.logger.exception(e)
             return self.location_medias_top_v1(location_pk, amount)
 
-    def location_medias_recent_a1(
+    async def location_medias_recent_a1(
         self, location_pk: int, amount: int = 24, sleep: float = 0.5
     ) -> List[Media]:
         """
@@ -419,9 +419,9 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         amount: int, optional
-            Maximum number of media to return, default is 24
+            Maximum number of media to return, async default is 24
         sleep: float, optional
-            Timeout between requests, default is 0.5
+            Timeout between requests, async default is 0.5
 
         Returns
         -------
@@ -432,7 +432,7 @@ class LocationMixin:
             location_pk, amount, sleep=sleep, tab_key="edge_location_to_media"
         )
 
-    def location_medias_recent_v1(
+    async def location_medias_recent_v1(
         self, location_pk: int, amount: int = 63
     ) -> List[Media]:
         """
@@ -443,7 +443,7 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         amount: int, optional
-            Maximum number of media to return, default is 63
+            Maximum number of media to return, async default is 63
 
         Returns
         -------
@@ -452,7 +452,7 @@ class LocationMixin:
         """
         return self.location_medias_v1(location_pk, amount, tab_key="recent")
 
-    def location_medias_recent(
+    async def location_medias_recent(
         self, location_pk: int, amount: int = 63, sleep: float = 0.5
     ) -> List[Media]:
         """
@@ -463,9 +463,9 @@ class LocationMixin:
         location_pk: int
             Unique identifier for a location
         amount: int, optional
-            Maximum number of media to return, default is 63
+            Maximum number of media to return, async default is 63
         sleep: float, optional
-            Timeout between requests, default is 0.5
+            Timeout between requests, async default is 0.5
 
         Returns
         -------

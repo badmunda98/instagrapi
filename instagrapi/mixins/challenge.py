@@ -24,7 +24,7 @@ class ChallengeChoice(Enum):
     EMAIL = 1
 
 
-def extract_messages(challenge):
+async def extract_messages(challenge):
     messages = []
     for item in challenge["extraData"].get("content"):
         message = item.get("title", item.get("text"))
@@ -39,7 +39,7 @@ class ChallengeResolveMixin:
     Helpers for resolving login challenge
     """
 
-    def challenge_resolve(self, last_json: Dict) -> bool:
+    async def challenge_resolve(self, last_json: Dict) -> bool:
         """
         Start challenge resolve
 
@@ -72,10 +72,10 @@ class ChallengeResolveMixin:
             self._send_private_request(challenge_url[1:], params=params)
         except ChallengeRequired:
             assert self.last_json["message"] == "challenge_required", self.last_json
-            return self.challenge_resolve_contact_form(challenge_url)
+            return await self.challenge_resolve_contact_form(challenge_url)
         return self.challenge_resolve_simple(challenge_url)
 
-    def challenge_resolve_contact_form(self, challenge_url: str) -> bool:
+    async def challenge_resolve_contact_form(self, challenge_url: str) -> bool:
         """
         Start challenge resolve
 
@@ -121,7 +121,7 @@ class ChallengeResolveMixin:
                 "sec-fetch-site": "none",
                 "sec-fetch-mode": "navigate",
                 "sec-fetch-user": "?1",
-                "accept-encoding": "gzip, deflate",
+                "accept-encoding": "gzip, async deflate",
                 "accept-language": "en-US,en;q=0.9,en-US;q=0.8,en;q=0.7",
                 "pragma": "no-cache",
                 "cache-control": "no-cache",
@@ -183,7 +183,7 @@ class ChallengeResolveMixin:
         ), result
         for retry_code in range(5):
             for attempt in range(1, 11):
-                code = self.challenge_code_handler(self.username, choice)
+                code = await self.challenge_code_handler(self.username, choice)
                 if code:
                     break
                 time.sleep(WAIT_SECONDS * attempt)
@@ -228,14 +228,14 @@ class ChallengeResolveMixin:
         assert result.get("status") == "ok", result
         return True
 
-    def challenge_resolve_new_password_form(self, result):
+    async def challenge_resolve_new_password_form(self, result):
         msg = ' '.join([
             'Log into your Instagram account from smartphone and change password!',
             *extract_messages(result)
         ])
         raise LegacyForceSetNewPasswordForm(msg)
 
-    def handle_challenge_result(self, challenge: Dict):
+    async def handle_challenge_result(self, challenge: Dict):
         """
         Handle challenge result
 
@@ -340,7 +340,7 @@ class ChallengeResolveMixin:
             raise ChallengeRedirection()
         return challenge
 
-    def challenge_resolve_simple(self, challenge_url: str) -> bool:
+    async def challenge_resolve_simple(self, challenge_url: str) -> bool:
         """
         Old type (through private api) challenge resolver
         Помогите нам удостовериться, что вы владеете этим аккаунтом

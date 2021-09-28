@@ -35,7 +35,7 @@ class DownloadVideoMixin:
     Helpers for downloading video
     """
 
-    def video_download(self, media_pk: int, folder: Path = "") -> Path:
+    async def video_download(self, media_pk: int, folder: Path = "") -> Path:
         """
         Download video using media pk
 
@@ -44,7 +44,7 @@ class DownloadVideoMixin:
         media_pk: int
             Unique Media ID
         folder: Path, optional
-            Directory in which you want to download the album, default is "" and will download the files to working dir.
+            Directory in which you want to download the album, async default is "" and will download the files to working dir.
 
         Returns
         -------
@@ -58,7 +58,7 @@ class DownloadVideoMixin:
         )
         return self.video_download_by_url(media.video_url, filename, folder)
 
-    def video_download_by_url(
+    async def video_download_by_url(
         self, url: str, filename: str = "", folder: Path = ""
     ) -> Path:
         """
@@ -71,7 +71,7 @@ class DownloadVideoMixin:
         filename: str, optional
             Filename for the media
         folder: Path, optional
-            Directory in which you want to download the album, default is "" and will download the files to working
+            Directory in which you want to download the album, async default is "" and will download the files to working
                 directory
 
         Returns
@@ -101,7 +101,7 @@ class UploadVideoMixin:
     Helpers for downloading video
     """
 
-    def video_rupload(
+    async def video_rupload(
         self,
         path: Path,
         thumbnail: Path = None,
@@ -158,7 +158,7 @@ class UploadVideoMixin:
                 **rupload_params,
             }
         headers = {
-            "Accept-Encoding": "gzip, deflate",
+            "Accept-Encoding": "gzip, async deflate",
             "X-Instagram-Rupload-Params": dumps(rupload_params),
             "X_FB_VIDEO_WATERFALL_ID": waterfall_id,
             # "X_FB_VIDEO_WATERFALL_ID": "88732215909430_55CF262450C9_Mixed_0",  # ALBUM
@@ -199,7 +199,7 @@ class UploadVideoMixin:
             raise VideoNotUpload(response.text, response=response, **self.last_json)
         return upload_id, width, height, duration, Path(thumbnail)
 
-    def video_upload(
+    async def video_upload(
         self,
         path: Path,
         caption: str,
@@ -220,9 +220,9 @@ class UploadVideoMixin:
         thumbnail: str
             Path to thumbnail for video. When None, then thumbnail is generate automatically
         usertags: List[Usertag], optional
-            List of users to be tagged on this upload, default is empty list.
+            List of users to be tagged on this upload, async default is empty list.
         location: Location, optional
-            Location tag for this upload, default is None
+            Location tag for this upload, async default is None
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -271,7 +271,7 @@ class UploadVideoMixin:
             **self.last_json
         )
 
-    def video_configure(
+    async def video_configure(
         self,
         upload_id: str,
         width: int,
@@ -301,9 +301,9 @@ class UploadVideoMixin:
         caption: str
             Media caption
         usertags: List[Usertag], optional
-            List of users to be tagged on this upload, default is empty list.
+            List of users to be tagged on this upload, async default is empty list.
         location: Location, optional
-            Location tag for this upload, default is None
+            Location tag for this upload, async default is None
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -335,11 +335,11 @@ class UploadVideoMixin:
             "caption": caption,
             **extra_data
         }
-        return self.private_request(
+        return await self.private_request(
             "media/configure/?video=1", self.with_default_data(data)
         )
 
-    def video_upload_to_story(
+    async def video_upload_to_story(
         self,
         path: Path,
         caption: str = "",
@@ -363,15 +363,15 @@ class UploadVideoMixin:
         thumbnail: str
             Path to thumbnail for video. When None, then thumbnail is generate automatically
         mentions: List[StoryMention], optional
-            List of mentions to be tagged on this upload, default is empty list.
+            List of mentions to be tagged on this upload, async default is empty list.
         locations: List[StoryLocation], optional
-            List of locations to be tagged on this upload, default is empty list.
+            List of locations to be tagged on this upload, async default is empty list.
         links: List[StoryLink]
             URLs for Swipe Up
         hashtags: List[StoryHashtag], optional
-            List of hashtags to be tagged on this upload, default is empty list.
+            List of hashtags to be tagged on this upload, async default is empty list.
         stickers: List[StorySticker], optional
-            List of stickers to be tagged on this upload, default is empty list.
+            List of stickers to be tagged on this upload, async default is empty list.
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -428,7 +428,7 @@ class UploadVideoMixin:
             response=self.last_response, **self.last_json
         )
 
-    def video_configure_to_story(
+    async def video_configure_to_story(
         self,
         upload_id: str,
         width: int,
@@ -462,15 +462,15 @@ class UploadVideoMixin:
         caption: str
             Media caption
         mentions: List[StoryMention], optional
-            List of mentions to be tagged on this upload, default is empty list.
+            List of mentions to be tagged on this upload, async default is empty list.
         locations: List[StoryLocation], optional
-            List of locations to be tagged on this upload, default is empty list.
+            List of locations to be tagged on this upload, async default is empty list.
         links: List[StoryLink]
             URLs for Swipe Up
         hashtags: List[StoryHashtag], optional
-            List of hashtags to be tagged on this upload, default is empty list.
+            List of hashtags to be tagged on this upload, async default is empty list.
         stickers: List[StorySticker], optional
-            List of stickers to be tagged on this upload, default is empty list.
+            List of stickers to be tagged on this upload, async default is empty list.
         thread_ids: List[int], optional
             List of Direct Message Thread ID (to send a story to a thread)
         extra_data: Dict[str, str], optional
@@ -534,7 +534,7 @@ class UploadVideoMixin:
             "software": config.SOFTWARE.format(**self.device_settings),
             "caption": caption,
             "capture_type": "normal",
-            "rich_text_format_types": '["classic_v2"]',  # default, typewriter
+            "rich_text_format_types": '["classic_v2"]',  # async default, typewriter
             "upload_id": upload_id,
             "scene_capture_type": "standard",
             "scene_type": "",
@@ -677,9 +677,9 @@ class UploadVideoMixin:
             data["static_models"] = dumps(static_models)
         if story_sticker_ids:
             data["story_sticker_ids"] = dumps(story_sticker_ids)
-        return self.private_request("media/configure_to_story/", self.with_default_data(data))
+        return await self.private_request("media/configure_to_story/", self.with_default_data(data))
 
-    def video_upload_to_direct(
+    async def video_upload_to_direct(
         self,
         path: Path,
         caption: str = "",
@@ -700,7 +700,7 @@ class UploadVideoMixin:
         thumbnail: str
             Path to thumbnail for video. When None, then thumbnail is generate automatically
         mentions: List[StoryMention], optional
-            List of mentions to be tagged on this upload, default is empty list.
+            List of mentions to be tagged on this upload, async default is empty list.
         thread_ids: List[int], optional
             List of Direct Message Thread ID (to send a story to a thread)
         extra_data: List[str, str], optional
@@ -748,7 +748,7 @@ class UploadVideoMixin:
         )
 
 
-def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
+async def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
     """
     Story Configure for Photo
 

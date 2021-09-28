@@ -18,7 +18,7 @@ class DownloadAlbumMixin:
     Helper class to download album
     """
 
-    def album_download(self, media_pk: int, folder: Path = "") -> List[Path]:
+    async def album_download(self, media_pk: int, folder: Path = "") -> List[Path]:
         """
         Download your album
 
@@ -27,7 +27,7 @@ class DownloadAlbumMixin:
         media_pk: int
             PK for the album you want to download
         folder: Path, optional
-            Directory in which you want to download the album, default is "" and will download the files to working directory.
+            Directory in which you want to download the album, async default is "" and will download the files to working directory.
 
         Returns
         -------
@@ -53,7 +53,7 @@ class DownloadAlbumMixin:
                 )
         return paths
 
-    def album_download_by_urls(self, urls: List[str], folder: Path = "") -> List[Path]:
+    async def album_download_by_urls(self, urls: List[str], folder: Path = "") -> List[Path]:
         """
         Download your album using specified URLs
 
@@ -62,7 +62,7 @@ class DownloadAlbumMixin:
         urls: List[str]
             List of URLs to download media from
         folder: Path, optional
-            Directory in which you want to download the album, default is "" and will download the files to working directory.
+            Directory in which you want to download the album, async default is "" and will download the files to working directory.
 
         Returns
         -------
@@ -82,7 +82,7 @@ class DownloadAlbumMixin:
 
 
 class UploadAlbumMixin:
-    def album_upload(
+    async def album_upload(
         self,
         paths: List[Path],
         caption: str,
@@ -104,17 +104,17 @@ class UploadAlbumMixin:
         caption: str
             Media caption
         usertags: List[Usertag], optional
-            List of users to be tagged on this upload, default is empty list.
+            List of users to be tagged on this upload, async default is empty list.
         location: Location, optional
-            Location tag for this upload, default is none
+            Location tag for this upload, async default is none
         configure_timeout: int
-            Timeout between attempt to configure media (set caption, etc), default is 3
+            Timeout between attempt to configure media (set caption, etc), async default is 3
         configure_handler
-            Configure handler method, default is None
+            Configure handler method, async default is None
         configure_exception
-            Configure exception class, default is None
+            Configure exception class, async default is None
         to_story: bool
-            Currently not used, default is False
+            Currently not used, async default is False
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -193,7 +193,7 @@ class UploadAlbumMixin:
             response=self.last_response, **self.last_json
         )
 
-    def album_configure(
+    async def album_configure(
         self,
         childs: List,
         caption: str,
@@ -211,9 +211,9 @@ class UploadAlbumMixin:
         caption: str
             Media caption
         usertags: List[Usertag], optional
-            List of users to be tagged on this upload, default is empty list.
+            List of users to be tagged on this upload, async default is empty list.
         location: Location, optional
-            Location tag for this upload, default is None
+            Location tag for this upload, async default is None
         extra_data: Dict[str, str], optional
             Dict of extra data, if you need to add your params, like {"share_to_facebook": 1}.
 
@@ -251,6 +251,6 @@ class UploadAlbumMixin:
             ],
             **extra_data
         }
-        return self.private_request(
+        return await self.private_request(
             "media/configure_sidecar/", self.with_default_data(data)
         )

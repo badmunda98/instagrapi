@@ -33,7 +33,7 @@ class PreLoginFlowMixin:
     Helpers for pre login flow
     """
 
-    def pre_login_flow(self) -> bool:
+    async def pre_login_flow(self) -> bool:
         """
         Emulation mobile app behavior before login
 
@@ -49,7 +49,7 @@ class PreLoginFlowMixin:
         # self.sync_device_features(True)
         return True
 
-    def get_prefill_candidates(self, login: bool = False) -> Dict:
+    async def get_prefill_candidates(self, login: bool = False) -> Dict:
         """
         Get prefill candidates value from Instagram
 
@@ -73,9 +73,9 @@ class PreLoginFlowMixin:
         }
         # if login is False:
         data["_csrftoken"] = self.token
-        return self.private_request("accounts/get_prefill_candidates/", data, login=login)
+        return await self.private_request("accounts/get_prefill_candidates/", data, login=login)
 
-    def sync_device_features(self, login: bool = False) -> Dict:
+    async def sync_device_features(self, login: bool = False) -> Dict:
         """
         Sync device features to your Instagram account
 
@@ -99,9 +99,9 @@ class PreLoginFlowMixin:
             data["_uid"] = self.user_id
             data["_csrftoken"] = self.token
         # headers={"X-DEVICE-ID": self.uuid}
-        return self.private_request("qe/sync/", data, login=login)
+        return await self.private_request("qe/sync/", data, login=login)
 
-    def sync_launcher(self, login: bool = False) -> Dict:
+    async def sync_launcher(self, login: bool = False) -> Dict:
         """
         Sync Launcher
 
@@ -123,9 +123,9 @@ class PreLoginFlowMixin:
             data["_uid"] = self.user_id
             data["_uuid"] = self.uuid
             data["_csrftoken"] = self.token
-        return self.private_request("launcher/sync/", data, login=login)
+        return await self.private_request("launcher/sync/", data, login=login)
 
-    def set_contact_point_prefill(self, usage: str = "prefill") -> Dict:
+    async def set_contact_point_prefill(self, usage: str = "prefill") -> Dict:
         """
         Sync Launcher
 
@@ -144,7 +144,7 @@ class PreLoginFlowMixin:
             "usage": usage,
             # "_csrftoken": self.token
         }
-        return self.private_request("accounts/contact_point_prefill/", data, login=True)
+        return await self.private_request("accounts/contact_point_prefill/", data, login=True)
 
 
 class PostLoginFlowMixin:
@@ -152,7 +152,7 @@ class PostLoginFlowMixin:
     Helpers for post login flow
     """
 
-    def login_flow(self) -> bool:
+    async def login_flow(self) -> bool:
         """
         Emulation mobile app behaivor after login
 
@@ -168,7 +168,7 @@ class PostLoginFlowMixin:
         check_flow.append(self.get_timeline_feed(["cold_start_fetch"]))
         return all(check_flow)
 
-    def get_timeline_feed(self, options: List[Dict] = ["pull_to_refresh"]) -> Dict:
+    async def get_timeline_feed(self, options: List[Dict] = ["pull_to_refresh"]) -> Dict:
         """
         Get your timeline feed
 
@@ -212,11 +212,11 @@ class PostLoginFlowMixin:
         #     data["push_disabled"] = "true"
         # if "recovered_from_crash" in options:
         #     data["recovered_from_crash"] = "1"
-        return self.private_request(
+        return await self.private_request(
             "feed/timeline/", json.dumps(data), with_signature=False, headers=headers
         )
 
-    def get_reels_tray_feed(self, reason: str = "pull_to_refresh") -> Dict:
+    async def get_reels_tray_feed(self, reason: str = "pull_to_refresh") -> Dict:
         """
         Get your reels tray feed
 
@@ -241,7 +241,7 @@ class PostLoginFlowMixin:
             # "_csrftoken": self.token,
             "_uuid": self.uuid,
         }
-        return self.private_request("feed/reels_tray/", data)
+        return await self.private_request("feed/reels_tray/", data)
 
 
 class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
@@ -265,11 +265,11 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
     locale = "en_US"
     timezone_offset: int = -14400  # New York, GMT-4 in seconds
 
-    def __init__(self):
+    async def __init__(self):
         self.user_agent = None
         self.settings = None
 
-    def init(self) -> bool:
+    async def init(self) -> bool:
         """
         Initialize Login helpers
 
@@ -298,7 +298,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         self.private.headers.update(headers)
         return True
 
-    def login_by_sessionid(self, sessionid: str) -> bool:
+    async def login_by_sessionid(self, sessionid: str) -> bool:
         """
         Login using session id
 
@@ -331,7 +331,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         self.cookie_dict["ds_user_id"] = user.pk
         return True
 
-    def login(self, username: str, password: str, relogin: bool = False, verification_code: str = '') -> bool:
+    async def login(self, username: str, password: str, relogin: bool = False, verification_code: str = '') -> bool:
         """
         Login
 
@@ -342,7 +342,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         password: str
             Instagram Password
         relogin: bool
-            Whether or not to re login, default False
+            Whether or not to re login, async default False
         verification_code: str
             2FA verification code
 
@@ -373,7 +373,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         enc_password = self.password_encrypt(password)
         data = {
             "jazoest": generate_jazoest(self.phone_id),
-            "country_codes": "[{\"country_code\":\"7\",\"source\":[\"default\"]}]",
+            "country_codes": "[{\"country_code\":\"7\",\"source\":[\"async default\"]}]",
             "phone_id": self.phone_id,
             "enc_password": enc_password,
             "username": username,
@@ -384,7 +384,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             "login_attempt_count": "0"
         }
         try:
-            logged = self.private_request("accounts/login/", data, login=True)
+            logged = await self.private_request("accounts/login/", data, login=True)
             self.authorization_data = self.parse_authorization(
                 self.last_response.headers.get('ig-set-authorization')
             )
@@ -406,14 +406,14 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
                 "waterfall_id": str(uuid4()),
                 "verification_method": "3"
             }
-            logged = self.private_request("accounts/two_factor_login/", data, login=True)
+            logged = await self.private_request("accounts/two_factor_login/", data, login=True)
         if logged:
             self.login_flow()
             self.last_login = time.time()
             return True
         return False
 
-    def one_tap_app_login(self, user_id: int, nonce: str) -> bool:
+    async def one_tap_app_login(self, user_id: int, nonce: str) -> bool:
         """One tap login emulation
 
         Parameters
@@ -438,9 +438,9 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             "login_nonce": nonce,
             "_csrftoken": self.token
         }
-        return self.private_request("accounts/one_tap_app_login/", data)
+        return await self.private_request("accounts/one_tap_app_login/", data)
 
-    def relogin(self) -> bool:
+    async def relogin(self) -> bool:
         """
         Relogin helper
 
@@ -452,18 +452,18 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         return self.login(self.username, self.password, relogin=True)
 
     @property
-    def cookie_dict(self) -> dict:
+    async def cookie_dict(self) -> dict:
         return self.private.cookies.get_dict()
 
     @property
-    def sessionid(self) -> str:
+    async def sessionid(self) -> str:
         sessionid = self.cookie_dict.get("sessionid")
         if not sessionid and self.authorization_data:
             sessionid = self.authorization_data.get('sessionid')
         return sessionid
 
     @property
-    def token(self) -> str:
+    async def token(self) -> str:
         """CSRF token
         e.g. vUJGjpst6szjI38mZ6Pb1dROsWVerZelGSYGe0W1tuugpSUefVjRLj2Pom2SWNoA
         """
@@ -472,11 +472,11 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         return self._token
 
     @property
-    def rank_token(self) -> str:
+    async def rank_token(self) -> str:
         return f"{self.user_id}_{self.uuid}"
 
     @property
-    def user_id(self) -> int:
+    async def user_id(self) -> int:
         user_id = self.cookie_dict.get("ds_user_id")
         if not user_id and self.authorization_data:
             user_id = self.authorization_data.get('ds_user_id')
@@ -485,14 +485,14 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         return None
 
     @property
-    def device(self) -> dict:
+    async def device(self) -> dict:
         return {
             key: val
             for key, val in self.device_settings.items()
             if key in ["manufacturer", "model", "android_version", "android_release"]
         }
 
-    def get_settings(self) -> Dict:
+    async def get_settings(self) -> Dict:
         """
         Get current session settings
 
@@ -523,7 +523,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             "timezone_offset": self.timezone_offset,
         }
 
-    def set_settings(self, settings: Dict) -> bool:
+    async def set_settings(self, settings: Dict) -> bool:
         """
         Set session settings
 
@@ -535,7 +535,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         self.init()
         return True
 
-    def load_settings(self, path: Path) -> Dict:
+    async def load_settings(self, path: Path) -> Dict:
         """
         Load session settings
 
@@ -554,7 +554,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             return self.settings
         return None
 
-    def dump_settings(self, path: Path) -> bool:
+    async def dump_settings(self, path: Path) -> bool:
         """
         Serialize and save session settings
 
@@ -571,14 +571,14 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             json.dump(self.get_settings(), fp)
         return True
 
-    def set_device(self, device: Dict = None, reset: bool = False) -> bool:
+    async def set_device(self, device: Dict = None, reset: bool = False) -> bool:
         """
         Helper to set a device for login
 
         Parameters
         ----------
         device: Dict, optional
-            Dict of device settings, default is None
+            Dict of device settings, async default is None
 
         Returns
         -------
@@ -603,14 +603,14 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             # self.settings = self.get_settings()
         return True
 
-    def set_user_agent(self, user_agent: str = "", reset: bool = False) -> bool:
+    async def set_user_agent(self, user_agent: str = "", reset: bool = False) -> bool:
         """
         Helper to set user agent
 
         Parameters
         ----------
         user_agent: str, optional
-            User agent, default is ""
+            User agent, async default is ""
 
         Returns
         -------
@@ -626,14 +626,14 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             # self.settings = self.get_settings()
         return True
 
-    def set_uuids(self, uuids: Dict = None) -> bool:
+    async def set_uuids(self, uuids: Dict = None) -> bool:
         """
         Helper to set uuids
 
         Parameters
         ----------
         uuids: Dict, optional
-            UUIDs, default is None
+            UUIDs, async default is None
 
         Returns
         -------
@@ -651,7 +651,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         self.settings["uuids"] = uuids
         return True
 
-    def generate_uuid(self, prefix: str = '', suffix: str = '') -> str:
+    async def generate_uuid(self, prefix: str = '', suffix: str = '') -> str:
         """
         Helper to generate uuids
 
@@ -662,7 +662,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         """
         return f'{prefix}{uuid.uuid4()}{suffix}'
 
-    def generate_mutation_token(self) -> str:
+    async def generate_mutation_token(self) -> str:
         """
         Token used when DM sending and upload media
 
@@ -673,7 +673,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         """
         return str(random.randint(6800011111111111111, 6800099999999999999))
 
-    def generate_android_device_id(self) -> str:
+    async def generate_android_device_id(self) -> str:
         """
         Helper to generate Android Device ID
 
@@ -684,7 +684,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         """
         return "android-%s" % hashlib.md5(str(time.time()).encode()).hexdigest()[:16]
 
-    def expose(self) -> Dict:
+    async def expose(self) -> Dict:
         """
         Helper to expose
 
@@ -694,16 +694,16 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             A dictionary of response from the call
         """
         data = {"id": self.uuid, "experiment": "ig_android_profile_contextual_feed"}
-        return self.private_request("qe/expose/", self.with_default_data(data))
+        return await self.private_request("qe/expose/", self.with_default_data(data))
 
-    def with_default_data(self, data: Dict) -> Dict:
+    async def with_default_data(self, data: Dict) -> Dict:
         """
-        Helper to get default data
+        Helper to get async default data
 
         Returns
         -------
         Dict
-            A dictionary of default data
+            A dictionary of async default data
         """
         return dict(
             {
@@ -715,7 +715,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             **data,
         )
 
-    def with_action_data(self, data: Dict) -> Dict:
+    async def with_action_data(self, data: Dict) -> Dict:
         """
         Helper to get action data
 
@@ -726,7 +726,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         """
         return dict(self.with_default_data({"radio_type": "wifi-none"}), **data)
 
-    def gen_user_breadcrumb(self, size: int) -> str:
+    async def gen_user_breadcrumb(self, size: int) -> str:
         """
         Helper to generate user breadcrumbs
 
@@ -761,7 +761,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             base64.b64encode(data.encode("ascii")),
         )
 
-    def inject_sessionid_to_public(self) -> bool:
+    async def inject_sessionid_to_public(self) -> bool:
         """
         Inject sessionid from private session to public session
 
@@ -775,14 +775,14 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             return True
         return False
 
-    def logout(self) -> bool:
-        result = self.private_request(
+    async def logout(self) -> bool:
+        result = await self.private_request(
             "accounts/logout/",
             {'one_tap_app_login': True}
         )
         return result["status"] == "ok"
 
-    def parse_authorization(self, authorization) -> dict:
+    async def parse_authorization(self, authorization) -> dict:
         """Parse authorization header
         """
         try:
@@ -793,7 +793,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         return {}
 
     @property
-    def authorization(self) -> str:
+    async def authorization(self) -> str:
         """Build authorization header
         Example: Bearer IGT:2:eaW9u.....aWQiOiI0NzM5=
         """

@@ -31,7 +31,7 @@ from instagrapi.exceptions import (
 from instagrapi.utils import dumps, generate_signature
 
 
-def manual_input_code(self, username: str, choice=None):
+async def manual_input_code(self, username: str, choice=None):
     """
     Manual security code helper
 
@@ -57,7 +57,7 @@ def manual_input_code(self, username: str, choice=None):
     return code  # is not int, because it can start from 0
 """
 
-def manual_change_password(self, username: str):
+async def manual_change_password(self, username: str):
     raise ManualInputRequired("Manual Password Insertion Required")
 """
     pwd = None
@@ -79,7 +79,7 @@ class PrivateRequestMixin:
     last_response = None
     last_json = {}
 
-    def __init__(self, *args, **kwargs):
+    async def __init__(self, *args, **kwargs):
         self.private = requests.Session()
         self.email = kwargs.pop("email", None)
         self.phone_number = kwargs.pop("phone_number", None)
@@ -87,7 +87,7 @@ class PrivateRequestMixin:
             "request_timeout", self.request_timeout)
         super().__init__(*args, **kwargs)
 
-    def small_delay(self):
+    async def small_delay(self):
         """
         Small Delay
 
@@ -97,7 +97,7 @@ class PrivateRequestMixin:
         """
         time.sleep(random.uniform(0.75, 3.75))
 
-    def very_small_delay(self):
+    async def very_small_delay(self):
         """
         Very small delay
 
@@ -108,7 +108,7 @@ class PrivateRequestMixin:
         time.sleep(random.uniform(0.175, 0.875))
 
     @property
-    def base_headers(self):
+    async def base_headers(self):
         locale = self.locale.replace("-", "_")
         accept_language = ['en-US']
         if locale:
@@ -144,7 +144,7 @@ class PrivateRequestMixin:
             "User-Agent": self.user_agent,
             "Accept-Language": ', '.join(accept_language),
             "X-MID": self.mid,  # e.g. X--ijgABABFjLLQ1NTEe0A6JSN7o, YRwa1QABBAF-ZA-1tPmnd0bEniTe
-            "Accept-Encoding": "gzip, deflate",  # ignore zstd
+            "Accept-Encoding": "gzip, async deflate",  # ignore zstd
             "Host": config.API_DOMAIN,
             "X-FB-HTTP-Engine": "Liger",
             "Connection": "keep-alive",
@@ -168,7 +168,7 @@ class PrivateRequestMixin:
             })
         return headers
 
-    def set_country(self, country: str = "US"):
+    async def set_country(self, country: str = "US"):
         """Set you country code (ISO 3166-1/3166-2)
 
         Parameters
@@ -185,7 +185,7 @@ class PrivateRequestMixin:
         self.country = str(country)
         return True
 
-    def set_locale(self, locale: str = "en_US"):
+    async def set_locale(self, locale: str = "en_US"):
         """Set you locale (ISO 3166-1/3166-2)
 
         Parameters
@@ -206,7 +206,7 @@ class PrivateRequestMixin:
             self.set_country(locale.rsplit('_', 1)[1])
         return True
 
-    def set_timezone_offset(self, seconds: int = 0):
+    async def set_timezone_offset(self, seconds: int = 0):
         """Set you timezone offset in seconds
 
         Parameters
@@ -223,10 +223,10 @@ class PrivateRequestMixin:
         return True
 
     @staticmethod
-    def with_query_params(data, params):
+    async def with_query_params(data, params):
         return dict(data, **{"query_params": json.dumps(params, separators=(",", ":"))})
 
-    def _send_private_request(
+    async def _send_private_request(
         self,
         endpoint,
         data=None,
@@ -367,7 +367,7 @@ class PrivateRequestMixin:
             raise ClientError(response=response, **last_json)
         return last_json
 
-    def request_log(self, response):
+    async def request_log(self, response):
         self.request_logger.info(
             "%s [%s] %s %s (%s)",
             self.username,
@@ -379,7 +379,7 @@ class PrivateRequestMixin:
             ),
         )
 
-    def private_request(
+    async def private_request(
         self,
         endpoint,
         data=None,
@@ -415,7 +415,7 @@ class PrivateRequestMixin:
             if self.handle_exception:
                 self.handle_exception(self, e)
             elif isinstance(e, ChallengeRequired):
-                self.challenge_resolve(self.last_json)
+                await self.challenge_resolve(self.last_json)
             else:
                 raise e
             if login and self.user_id:

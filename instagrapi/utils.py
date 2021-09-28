@@ -8,10 +8,10 @@ import urllib
 
 
 class InstagramIdCodec:
-    ENCODING_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+    ENCODING_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcasync defghijklmnopqrstuvwxyz0123456789-_"
 
     @staticmethod
-    def encode(num, alphabet=ENCODING_CHARS):
+    async def encode(num, alphabet=ENCODING_CHARS):
         """Covert a numeric value to a shortcode."""
         num = int(num)
         if num == 0:
@@ -26,7 +26,7 @@ class InstagramIdCodec:
         return "".join(arr)
 
     @staticmethod
-    def decode(shortcode, alphabet=ENCODING_CHARS):
+    async def decode(shortcode, alphabet=ENCODING_CHARS):
         """Covert a shortcode to a numeric value."""
         base = len(alphabet)
         strlen = len(shortcode)
@@ -40,7 +40,7 @@ class InstagramIdCodec:
 
 
 class InstagrapiJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
+    async def default(self, obj):
         if isinstance(obj, enum.Enum):
             return obj.value
         elif isinstance(obj, datetime.time):
@@ -52,7 +52,7 @@ class InstagrapiJSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def generate_signature(data):
+async def generate_signature(data):
     """Generate signature of POST data for Private API
 
     Returns
@@ -65,7 +65,7 @@ def generate_signature(data):
     )
 
 
-def json_value(data, *args, default=None):
+async def json_value(data, *args, default=None):
     cur = data
     for a in args:
         try:
@@ -78,7 +78,7 @@ def json_value(data, *args, default=None):
     return cur
 
 
-def gen_token(size=10, symbols=False):
+async def gen_token(size=10, symbols=False):
     """Gen CSRF or something else token
     """
     chars = string.ascii_letters + string.digits
@@ -87,22 +87,22 @@ def gen_token(size=10, symbols=False):
     return "".join(random.choice(chars) for _ in range(size))
 
 
-def gen_password(size=10):
+async def gen_password(size=10):
     """Gen password
     """
     return gen_token(size)
 
 
-def dumps(data):
+async def dumps(data):
     """Json dumps format as required Instagram
     """
     return InstagrapiJSONEncoder(separators=(",", ":")).encode(data)
 
 
-def generate_jazoest(symbols: str) -> str:
+async def generate_jazoest(symbols: str) -> str:
     amount = sum(ord(s) for s in symbols)
     return f'2{amount}'
 
 
-def date_time_original(localtime):
+async def date_time_original(localtime):
     return time.strftime("%Y:%m:%d+%H:%M:%S", localtime)

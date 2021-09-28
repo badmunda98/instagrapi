@@ -16,7 +16,7 @@ class HashtagMixin:
     Helpers for managing Hashtag
     """
 
-    def hashtag_info_a1(self, name: str, max_id: str = None) -> Hashtag:
+    async def hashtag_info_a1(self, name: str, max_id: str = None) -> Hashtag:
         """
         Get information about a hashtag by Public Web API
 
@@ -26,7 +26,7 @@ class HashtagMixin:
             Name of the hashtag
 
         max_id: str
-            Max ID, default value is None
+            Max ID, async default value is None
 
         Returns
         -------
@@ -39,7 +39,7 @@ class HashtagMixin:
             raise HashtagNotFound(name=name, **data)
         return extract_hashtag_gql(data["hashtag"])
 
-    def hashtag_info_gql(
+    async def hashtag_info_gql(
         self, name: str, amount: int = 12, end_cursor: str = None
     ) -> Hashtag:
         """
@@ -51,10 +51,10 @@ class HashtagMixin:
             Name of the hashtag
 
         amount: int, optional
-            Maximum number of media to return, default is 12
+            Maximum number of media to return, async default is 12
 
         end_cursor: str, optional
-            End Cursor, default value is None
+            End Cursor, async default value is None
 
         Returns
         -------
@@ -71,7 +71,7 @@ class HashtagMixin:
             raise HashtagNotFound(name=name, **data)
         return extract_hashtag_gql(data["hashtag"])
 
-    def hashtag_info_v1(self, name: str) -> Hashtag:
+    async def hashtag_info_v1(self, name: str) -> Hashtag:
         """
         Get information about a hashtag by Private Mobile API
 
@@ -85,10 +85,10 @@ class HashtagMixin:
         Hashtag
             An object of Hashtag
         """
-        result = self.private_request(f"tags/{name}/info/")
+        result = await self.private_request(f"tags/{name}/info/")
         return extract_hashtag_v1(result)
 
-    def hashtag_info(self, name: str) -> Hashtag:
+    async def hashtag_info(self, name: str) -> Hashtag:
         """
         Get information about a hashtag
 
@@ -112,7 +112,7 @@ class HashtagMixin:
             hashtag = self.hashtag_info_v1(name)
         return hashtag
 
-    def hashtag_related_hashtags(self, name: str) -> List[Hashtag]:
+    async def hashtag_related_hashtags(self, name: str) -> List[Hashtag]:
         """
         Get related hashtags from a hashtag
 
@@ -134,7 +134,7 @@ class HashtagMixin:
             for item in data["hashtag"]["edge_hashtag_to_related_tags"]["edges"]
         ]
 
-    def hashtag_medias_a1_chunk(
+    async def hashtag_medias_a1_chunk(
         self, name: str, max_amount: int = 27, tab_key: str = "", end_cursor: str = None
     ) -> Tuple[List[Media], str]:
         """
@@ -145,11 +145,11 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         max_amount: int, optional
-            Maximum number of media to return, default is 27
+            Maximum number of media to return, async default is 27
         tab_key: str, optional
-            Tab Key, default value is ""
+            Tab Key, async default value is ""
         end_cursor: str, optional
-            End Cursor, default value is None
+            End Cursor, async default value is None
 
         Returns
         -------
@@ -197,7 +197,7 @@ class HashtagMixin:
             break
         return medias, end_cursor
 
-    def hashtag_medias_a1(
+    async def hashtag_medias_a1(
         self, name: str, amount: int = 27, tab_key: str = ""
     ) -> List[Media]:
         """
@@ -208,9 +208,9 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         amount: int, optional
-            Maximum number of media to return, default is 27
+            Maximum number of media to return, async default is 27
         tab_key: str, optional
-            Tab Key, default value is ""
+            Tab Key, async default value is ""
 
         Returns
         -------
@@ -222,7 +222,7 @@ class HashtagMixin:
             medias = medias[:amount]
         return medias
 
-    def hashtag_medias_v1_chunk(
+    async def hashtag_medias_v1_chunk(
         self, name: str, max_amount: int = 27, tab_key: str = "", max_id: str = None
     ) -> Tuple[List[Media], str]:
         """
@@ -233,11 +233,11 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         max_amount: int, optional
-            Maximum number of media to return, default is 27
+            Maximum number of media to return, async default is 27
         tab_key: str, optional
-            Tab Key, default value is ""
+            Tab Key, async default value is ""
         max_id: str
-            Max ID, default value is None
+            Max ID, async default value is None
 
         Returns
         -------
@@ -255,7 +255,7 @@ class HashtagMixin:
         }
         medias = []
         while True:
-            result = self.private_request(
+            result = await self.private_request(
                 f"tags/{name}/sections/",
                 params={"max_id": max_id} if max_id else {},
                 data=self.with_default_data(data),
@@ -278,7 +278,7 @@ class HashtagMixin:
             max_id = result["next_max_id"]
         return medias, max_id
 
-    def hashtag_medias_v1(
+    async def hashtag_medias_v1(
         self, name: str, amount: int = 27, tab_key: str = ""
     ) -> List[Media]:
         """
@@ -289,9 +289,9 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         amount: int, optional
-            Maximum number of media to return, default is 27
+            Maximum number of media to return, async default is 27
         tab_key: str, optional
-            Tab Key, default value is ""
+            Tab Key, async default value is ""
 
         Returns
         -------
@@ -303,7 +303,7 @@ class HashtagMixin:
             medias = medias[:amount]
         return medias
 
-    def hashtag_medias_top_a1(self, name: str, amount: int = 9) -> List[Media]:
+    async def hashtag_medias_top_a1(self, name: str, amount: int = 9) -> List[Media]:
         """
         Get top medias for a hashtag by Public Web API
 
@@ -312,7 +312,7 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         amount: int, optional
-            Maximum number of media to return, default is 9
+            Maximum number of media to return, async default is 9
 
         Returns
         -------
@@ -321,7 +321,7 @@ class HashtagMixin:
         """
         return self.hashtag_medias_a1(name, amount, tab_key="edge_hashtag_to_top_posts")
 
-    def hashtag_medias_top_v1(self, name: str, amount: int = 9) -> List[Media]:
+    async def hashtag_medias_top_v1(self, name: str, amount: int = 9) -> List[Media]:
         """
         Get top medias for a hashtag by Private Mobile API
 
@@ -330,7 +330,7 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         amount: int, optional
-            Maximum number of media to return, default is 9
+            Maximum number of media to return, async default is 9
 
         Returns
         -------
@@ -339,7 +339,7 @@ class HashtagMixin:
         """
         return self.hashtag_medias_v1(name, amount, tab_key="top")
 
-    def hashtag_medias_top(self, name: str, amount: int = 9) -> List[Media]:
+    async def hashtag_medias_top(self, name: str, amount: int = 9) -> List[Media]:
         """
         Get top medias for a hashtag
 
@@ -348,7 +348,7 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         amount: int, optional
-            Maximum number of media to return, default is 9
+            Maximum number of media to return, async default is 9
 
         Returns
         -------
@@ -361,7 +361,7 @@ class HashtagMixin:
             medias = self.hashtag_medias_top_v1(name, amount)
         return medias
 
-    def hashtag_medias_recent_a1(self, name: str, amount: int = 71) -> List[Media]:
+    async def hashtag_medias_recent_a1(self, name: str, amount: int = 71) -> List[Media]:
         """
         Get recent medias for a hashtag by Public Web API
 
@@ -370,7 +370,7 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         amount: int, optional
-            Maximum number of media to return, default is 71
+            Maximum number of media to return, async default is 71
 
         Returns
         -------
@@ -379,7 +379,7 @@ class HashtagMixin:
         """
         return self.hashtag_medias_a1(name, amount, tab_key="edge_hashtag_to_media")
 
-    def hashtag_medias_recent_v1(self, name: str, amount: int = 27) -> List[Media]:
+    async def hashtag_medias_recent_v1(self, name: str, amount: int = 27) -> List[Media]:
         """
         Get recent medias for a hashtag by Private Mobile API
 
@@ -388,7 +388,7 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         amount: int, optional
-            Maximum number of media to return, default is 71
+            Maximum number of media to return, async default is 71
 
         Returns
         -------
@@ -397,7 +397,7 @@ class HashtagMixin:
         """
         return self.hashtag_medias_v1(name, amount, tab_key="recent")
 
-    def hashtag_medias_recent(self, name: str, amount: int = 27) -> List[Media]:
+    async def hashtag_medias_recent(self, name: str, amount: int = 27) -> List[Media]:
         """
         Get recent medias for a hashtag
 
@@ -406,7 +406,7 @@ class HashtagMixin:
         name: str
             Name of the hashtag
         amount: int, optional
-            Maximum number of media to return, default is 71
+            Maximum number of media to return, async default is 71
 
         Returns
         -------

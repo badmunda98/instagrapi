@@ -30,7 +30,7 @@ class MediaMixin:
 
     _medias_cache = {}  # pk -> object
 
-    def media_id(self, media_pk: int) -> str:
+    async def media_id(self, media_pk: int) -> str:
         """
         Get full media id
 
@@ -58,7 +58,7 @@ class MediaMixin:
         return media_id
 
     @staticmethod
-    def media_pk(media_id: str) -> int:
+    async def media_pk(media_id: str) -> int:
         """
         Get short media id
 
@@ -81,7 +81,7 @@ class MediaMixin:
             media_pk, _ = media_id.split("_")
         return int(media_pk)
 
-    def media_pk_from_code(self, code: str) -> int:
+    async def media_pk_from_code(self, code: str) -> int:
         """
         Get Media PK from Code
 
@@ -103,7 +103,7 @@ class MediaMixin:
         """
         return InstagramIdCodec.decode(code[:11])
 
-    def media_pk_from_url(self, url: str) -> int:
+    async def media_pk_from_url(self, url: str) -> int:
         """
         Get Media PK from URL
 
@@ -126,7 +126,7 @@ class MediaMixin:
         parts = [p for p in path.split("/") if p]
         return self.media_pk_from_code(parts.pop())
 
-    def media_info_a1(self, media_pk: int, max_id: str = None) -> Media:
+    async def media_info_a1(self, media_pk: int, max_id: str = None) -> Media:
         """
         Get Media from PK by Public Web API
 
@@ -135,7 +135,7 @@ class MediaMixin:
         media_pk: int
             Unique identifier of the media
         max_id: str, optional
-            Max ID, default value is None
+            Max ID, async default value is None
 
         Returns
         -------
@@ -154,7 +154,7 @@ class MediaMixin:
             raise MediaNotFound(media_pk=media_pk, **data)
         return extract_media_gql(data["shortcode_media"])
 
-    def media_info_gql(self, media_pk: int) -> Media:
+    async def media_info_gql(self, media_pk: int) -> Media:
         """
         Get Media from PK by Public Graphql API
 
@@ -190,7 +190,7 @@ class MediaMixin:
             ).dict()
         return extract_media_gql(data["shortcode_media"])
 
-    def media_info_v1(self, media_pk: int) -> Media:
+    async def media_info_v1(self, media_pk: int) -> Media:
         """
         Get Media from PK by Private Mobile API
 
@@ -205,7 +205,7 @@ class MediaMixin:
             An object of Media type
         """
         try:
-            result = self.private_request(f"media/{media_pk}/info/")
+            result = await self.private_request(f"media/{media_pk}/info/")
         except ClientNotFoundError as e:
             raise MediaNotFound(e, media_pk=media_pk, **self.last_json)
         except ClientError as e:
@@ -214,7 +214,7 @@ class MediaMixin:
             raise e
         return extract_media_v1(result["items"].pop())
 
-    def media_info(self, media_pk: int, use_cache: bool = True) -> Media:
+    async def media_info(self, media_pk: int, use_cache: bool = True) -> Media:
         """
         Get Media Information from PK
 
@@ -223,7 +223,7 @@ class MediaMixin:
         media_pk: int
             Unique identifier of the media
         use_cache: bool, optional
-            Whether or not to use information from cache, default value is True
+            Whether or not to use information from cache, async default value is True
 
         Returns
         -------
@@ -250,7 +250,7 @@ class MediaMixin:
             self._medias_cache[media_pk]
         )  # return copy of cache (dict changes protection)
 
-    def media_delete(self, media_id: str) -> bool:
+    async def media_delete(self, media_id: str) -> bool:
         """
         Delete media by Media ID
 
@@ -266,13 +266,13 @@ class MediaMixin:
         """
         assert self.user_id, "Login required"
         media_id = self.media_id(media_id)
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/delete/", self.with_default_data({"media_id": media_id})
         )
         self._medias_cache.pop(self.media_pk(media_id), None)
         return result.get("did_delete")
 
-    def media_edit(
+    async def media_edit(
         self,
         media_id: str,
         caption: str,
@@ -292,9 +292,9 @@ class MediaMixin:
         title: str
             Title of the media
         usertags: List[Usertag], optional
-            List of users to be tagged on this upload, default is empty list.
+            List of users to be tagged on this upload, async default is empty list.
         location: Location, optional
-            Location tag for this upload, default is None
+            Location tag for this upload, async default is None
 
         Returns
         -------
@@ -327,13 +327,13 @@ class MediaMixin:
                 "igtv_ads_toggled_on": "0",
             }
         self._medias_cache.pop(self.media_pk(media_id), None)  # clean cache
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/edit_media/",
             self.with_default_data(data),
         )
         return result
 
-    def media_user(self, media_pk: int) -> UserShort:
+    async def media_user(self, media_pk: int) -> UserShort:
         """
         Get author of the media
 
@@ -349,7 +349,7 @@ class MediaMixin:
         """
         return self.media_info(media_pk).user
 
-    def media_oembed(self, url: str) -> Dict:
+    async def media_oembed(self, url: str) -> Dict:
         """
         Return info about media and user from post URL
 
@@ -363,9 +363,9 @@ class MediaMixin:
         Dict
             A dictionary of response from the call
         """
-        return extract_media_oembed(self.private_request(f"oembed?url={url}"))
+        return extract_media_oembed(await self.private_request(f"oembed?url={url}"))
 
-    def media_like(self, media_id: str, revert: bool = False) -> bool:
+    async def media_like(self, media_id: str, revert: bool = False) -> bool:
         """
         Like a media
 
@@ -392,12 +392,12 @@ class MediaMixin:
             "feed_position": str(random.randint(0, 6)),
         }
         name = "unlike" if revert else "like"
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/{name}/", self.with_action_data(data)
         )
         return result["status"] == "ok"
 
-    def media_unlike(self, media_id: str) -> bool:
+    async def media_unlike(self, media_id: str) -> bool:
         """
         Unlike a media
 
@@ -413,7 +413,7 @@ class MediaMixin:
         """
         return self.media_like(media_id, revert=True)
 
-    def user_medias_gql(
+    async def user_medias_gql(
         self, user_id: int, amount: int = 0, sleep: int = 2
     ) -> List[Media]:
         """
@@ -423,9 +423,9 @@ class MediaMixin:
         ----------
         user_id: int
         amount: int, optional
-            Maximum number of media to return, default is 0 (all medias)
+            Maximum number of media to return, async default is 0 (all medias)
         sleep: int, optional
-            Timeout between pages iterations, default is 2
+            Timeout between pages iterations, async default is 2
 
         Returns
         -------
@@ -464,7 +464,7 @@ class MediaMixin:
             medias = medias[:amount]
         return [extract_media_gql(media) for media in medias]
 
-    def user_medias_v1(self, user_id: int, amount: int = 0) -> List[Media]:
+    async def user_medias_v1(self, user_id: int, amount: int = 0) -> List[Media]:
         """
         Get a user's media by Private Mobile API
 
@@ -472,7 +472,7 @@ class MediaMixin:
         ----------
         user_id: int
         amount: int, optional
-            Maximum number of media to return, default is 0 (all medias)
+            Maximum number of media to return, async default is 0 (all medias)
 
         Returns
         -------
@@ -486,7 +486,7 @@ class MediaMixin:
         min_timestamp = None
         while True:
             try:
-                items = self.private_request(
+                items = await self.private_request(
                     f"feed/user/{user_id}/",
                     params={
                         "max_id": next_max_id,
@@ -508,7 +508,7 @@ class MediaMixin:
             medias = medias[:amount]
         return [extract_media_v1(media) for media in medias]
 
-    def user_medias(self, user_id: int, amount: int = 0) -> List[Media]:
+    async def user_medias(self, user_id: int, amount: int = 0) -> List[Media]:
         """
         Get a user's media
 
@@ -516,7 +516,7 @@ class MediaMixin:
         ----------
         user_id: int
         amount: int, optional
-            Maximum number of media to return, default is 0 (all medias)
+            Maximum number of media to return, async default is 0 (all medias)
 
         Returns
         -------
@@ -541,7 +541,7 @@ class MediaMixin:
             medias = self.user_medias_v1(user_id, amount)
         return medias
 
-    def media_seen(self, media_ids: List[str], skipped_media_ids: List[str] = []):
+    async def media_seen(self, media_ids: List[str], skipped_media_ids: List[str] = []):
         """
         Mark a media as seen
 
@@ -555,7 +555,7 @@ class MediaMixin:
             A boolean value
         """
 
-        def gen(media_ids):
+        async def gen(media_ids):
             result = {}
             for media_id in media_ids:
                 media_pk, user_id = self.media_id(media_id).split('_')
@@ -573,13 +573,13 @@ class MediaMixin:
             "live_vods": {},
             "reel_media_skipped": gen(skipped_media_ids)
         }
-        result = self.private_request(
+        result = await self.private_request(
             "/v2/media/seen/?reel=1&live_vod=0",
             self.with_default_data(data)
         )
         return result["status"] == "ok"
 
-    def media_likers(self, media_id: str) -> List[UserShort]:
+    async def media_likers(self, media_id: str) -> List[UserShort]:
         """
         Get user's likers
 
@@ -593,10 +593,10 @@ class MediaMixin:
             List of objects of User type
         """
         media_id = self.media_id(media_id)
-        result = self.private_request(f"media/{media_id}/likers/")
+        result = await self.private_request(f"media/{media_id}/likers/")
         return [extract_user_short(u) for u in result['users']]
 
-    def media_archive(self, media_id: str, revert: bool = False) -> bool:
+    async def media_archive(self, media_id: str, revert: bool = False) -> bool:
         """
         Archive a media
 
@@ -614,13 +614,13 @@ class MediaMixin:
         """
         media_id = self.media_id(media_id)
         name = "undo_only_me" if revert else "only_me"
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/{name}/",
             self.with_action_data({"media_id": media_id})
         )
         return result["status"] == "ok"
 
-    def media_unarchive(self, media_id: str) -> bool:
+    async def media_unarchive(self, media_id: str) -> bool:
         """
         Unarchive a media
 
@@ -636,7 +636,7 @@ class MediaMixin:
         """
         return self.media_archive(media_id, revert=True)
 
-    def usertag_medias_gql(
+    async def usertag_medias_gql(
         self, user_id: int, amount: int = 0, sleep: int = 2
     ) -> List[Media]:
         """
@@ -646,9 +646,9 @@ class MediaMixin:
         ----------
         user_id: int
         amount: int, optional
-            Maximum number of media to return, default is 0 (all medias)
+            Maximum number of media to return, async default is 0 (all medias)
         sleep: int, optional
-            Timeout between pages iterations, default is 2
+            Timeout between pages iterations, async default is 2
 
         Returns
         -------
@@ -687,7 +687,7 @@ class MediaMixin:
             medias = medias[:amount]
         return [extract_media_gql(media) for media in medias]
 
-    def usertag_medias_v1(self, user_id: int, amount: int = 0) -> List[Media]:
+    async def usertag_medias_v1(self, user_id: int, amount: int = 0) -> List[Media]:
         """
         Get medias where a user is tagged (by Private Mobile API)
 
@@ -695,7 +695,7 @@ class MediaMixin:
         ----------
         user_id: int
         amount: int, optional
-            Maximum number of media to return, default is 0 (all medias)
+            Maximum number of media to return, async default is 0 (all medias)
 
         Returns
         -------
@@ -708,7 +708,7 @@ class MediaMixin:
         next_max_id = ""
         while True:
             try:
-                items = self.private_request(f"usertags/{user_id}/feed/", params={"max_id": next_max_id})["items"]
+                items = await self.private_request(f"usertags/{user_id}/feed/", params={"max_id": next_max_id})["items"]
             except Exception as e:
                 self.logger.exception(e)
                 break
@@ -722,7 +722,7 @@ class MediaMixin:
             medias = medias[:amount]
         return [extract_media_v1(media) for media in medias]
 
-    def usertag_medias(self, user_id: int, amount: int = 0) -> List[Media]:
+    async def usertag_medias(self, user_id: int, amount: int = 0) -> List[Media]:
         """
         Get medias where a user is tagged
 
@@ -730,7 +730,7 @@ class MediaMixin:
         ----------
         user_id: int
         amount: int, optional
-            Maximum number of media to return, default is 0 (all medias)
+            Maximum number of media to return, async default is 0 (all medias)
 
         Returns
         -------
