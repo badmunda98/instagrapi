@@ -303,7 +303,7 @@ def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
         args = shlex.split(cmd)
         args.append(path)
         run_cmd(args)
-    return thumbnail, width, height, video.duration
+    return thumbnail, width, height, duration
 
 
 def run_cmd(args=[]) -> List:
@@ -320,5 +320,5 @@ def get_data(file: Path) -> bool:
     data = json.loads(run_cmd(args))
     height = data['streams'][0]['height']
     width = data['streams'][0]['width']
-    duration = get_sec(data['streams'][-1]['tags']['DURATION'])
-    return height, width, duration
+    duration = data['streams'][-1].get('duration') or get_sec(data['streams'][-1]['tags']['DURATION'])
+    return height, width, int(float(duration))
