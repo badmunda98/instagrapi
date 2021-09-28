@@ -299,7 +299,7 @@ def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
     if not thumbnail:
         thumbnail = f"{path}.jpg"
         print(f'Generating thumbnail "{thumbnail}"...')
-        cmd = f'ffmpeg -ss {duration/2} -an -s {width}x{height} -vframes 1 {thumbnail} -y -i'
+        cmd = f'ffmpeg -ss {duration/2} -an -s 404x720 -vframes 1 {thumbnail} -y -i'
         args = shlex.split(cmd)
         args.append(str(path))
         run_cmd(args)
