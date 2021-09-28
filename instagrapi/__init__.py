@@ -70,6 +70,7 @@ class Client(
     def __init__(self, settings: dict = {}, proxy: str = None, **kwargs):
         super().__init__(**kwargs)
         self.settings = settings
+        self.code = None
         self.set_proxy(proxy)
         self.init()
 
