@@ -297,7 +297,7 @@ def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
     print(f'Analizing IGTV file "{path}"')
     width, height, duration = get_data(path)
     if not thumbnail:
-        thumbnail = f"{path}.jpg"
+        thumbnail = f"{path}.jpg".replace(" ", "")
         print(f'Generating thumbnail "{thumbnail}"...')
         cmd = f'ffmpeg -ss {duration/2} -an -s 404x720 -vframes 1 {thumbnail} -y -i'
         args = shlex.split(cmd)
