@@ -1,4 +1,6 @@
 import random
+import subprocess
+import shlex
 import time
 from pathlib import Path
 from typing import Dict, List
@@ -765,18 +767,32 @@ def analyze_video(path: Path, thumbnail: Path = None) -> tuple:
         (width, height, duration, thumbnail)
     """
 
-    try:
-        import moviepy.editor as mp
-    except ImportError:
-        raise Exception("Please install moviepy>=1.0.3 and retry")
 
     print(f'Analizing video file "{path}"')
-    video = mp.VideoFileClip(str(path))
-    width, height = video.size
+    width, height, duration = get_data(path)
     if not thumbnail:
-        thumbnail = f"{path}.jpg"
+        thumbnail = f"{path}.jpg".replace(" ", "")
         print(f'Generating thumbnail "{thumbnail}"...')
-        video.save_frame(thumbnail, t=(video.duration / 2))
-    # duration = round(video.duration + 0.001, 3)
-    video.close()
-    return width, height, video.duration, thumbnail
+        cmd = f'ffmpeg -ss {duration/2} -an -s 404x720 -vframes 1 {thumbnail} -y -i'
+        args = shlex.split(cmd)
+        args.append(str(path))
+        run_cmd(args)
+    return width, height, duration, thumbnail
+
+
+def run_cmd(args=[]) -> List:
+    return subprocess.check_output(args).decode('utf-8')
+
+def get_sec(duration: str) -> str:
+    ts = duration.split('.')[0]
+    return sum(int(x) * 60 ** i for i, x in enumerate(reversed(ts.split(':'))))
+
+def get_data(file: Path) -> bool:
+    cmd = 'ffprobe -v quiet -print_format json -show_streams'
+    args = shlex.split(cmd)
+    args.append(file)
+    data = json.loads(run_cmd(args))
+    height = data['streams'][0]['height']
+    width = data['streams'][0]['width']
+    duration = data['streams'][-1].get('duration') or get_sec(data['streams'][-1]['tags']['DURATION'])
+    return height, width, int(float(duration))
