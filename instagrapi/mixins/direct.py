@@ -332,12 +332,12 @@ class DirectMixin:
             "nav_chain": random.choices(nav_chains),
             "offline_threading_id": token,
         }
-        if content_type == "video":
-            data["video_result"] = ""
-            kwargs["to_direct"] = True
         if content_type == "photo":
             data["send_attribution"] = "inbox"
             data["allow_full_aspect_ratio"] = "true"
+        elif content_type == "video":
+            data["video_result"] = ""
+            kwargs["to_direct"] = True
         if user_ids:
             data["recipient_users"] = dumps([[int(uid) for uid in user_ids]])
         if thread_ids:
