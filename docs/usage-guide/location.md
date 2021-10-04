@@ -127,7 +127,7 @@ Example:
 ```
 
 Facebook Search:
-```
+``` python
 >>> place = cl.fbsearch_places('Perch')[2]
 >>> place.dict()
 {
@@ -162,6 +162,43 @@ Facebook Search:
  'external_id': None,
  'external_id_source': None
 }
+```
+
+``` python
+>>> place = cl.fbsearch_places("Villa Sirot", 46.7032028502, 4.3093986902)[0]
+>>> place.dict()
+{'pk': 1001956449,
+ 'name': 'Villa Sirot',
+ 'phone': '',
+ 'website': '',
+ 'category': '',
+ 'hours': {},
+ 'address': None,
+ 'city': None,
+ 'zip': None,
+ 'lng': 4.3093986902426,
+ 'lat': 46.703202850229,
+ 'external_id': 165573396905197,
+ 'external_id_source': 'facebook_places'}
+
+>>> cl.location_info(place.pk).dict()
+{'pk': 1001956449,
+ 'name': 'Villa Sirot',
+ 'phone': '',
+ 'website': None,
+ 'category': 'Local Business',
+ 'hours': {'status': '',
+  'current_status': '',
+  'hours_today': '',
+  'schedule': []},
+ 'address': None,
+ 'city': None,
+ 'zip': None,
+ 'lng': None,
+ 'lat': None,
+ 'external_id': 165573396905197,
+ 'external_id_source': None}
+
 ```
 
 Low level methods:

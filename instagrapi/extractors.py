@@ -11,6 +11,7 @@ from .types import (
     DirectShortThread,
     DirectThread,
     Hashtag,
+    Highlight,
     Location,
     Media,
     MediaOembed,
@@ -248,7 +249,10 @@ def extract_direct_response(data):
 def extract_direct_message(data):
     data["id"] = data.get("item_id")
     if "media_share" in data:
-        data["media_share"] = extract_media_v1(data["media_share"])
+        ms = data["media_share"]
+        if not ms.get("code"):
+            ms["code"] = InstagramIdCodec.encode(ms["id"])
+        data["media_share"] = extract_media_v1(ms)
     if "media" in data:
         data["media"] = extract_direct_media(data["media"])
     clip = data.get("clip", {})
@@ -352,3 +356,13 @@ def extract_story_gql(data):
     story["taken_at"] = story["taken_at_timestamp"]
     story["media_type"] = 2 if story["is_video"] else 1
     return Story(**story)
+
+
+def extract_highlight_v1(data):
+    highlight = deepcopy(data)
+    highlight['pk'] = highlight['id'].split(':')[1]
+    highlight['items'] = [
+        extract_story_v1(item)
+        for item in highlight['items']
+    ]
+    return Highlight(**highlight)
