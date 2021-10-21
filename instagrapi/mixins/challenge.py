@@ -1,10 +1,13 @@
 import hashlib
 import json
 import time
+import asyncio
 from enum import Enum
 from typing import Dict
-
+import nest_asyncio
 import requests
+
+nest_asyncio.apply()
 
 from instagrapi.exceptions import (
     ChallengeError,
@@ -177,6 +180,7 @@ class ChallengeResolveMixin:
                 break
             except ChallengeRedirection:
                 return True  # instagram redirect
+        loop = asyncio.get_event_loop()
         assert result.get("challengeType") in (
             "VerifyEmailCodeForm",
             "VerifySMSCodeForm",
@@ -184,7 +188,7 @@ class ChallengeResolveMixin:
         ), result
         for retry_code in range(5):
             for attempt in range(1, 11):
-                code = self.code
+                code = loop.run_until_complete(self.challenge_code_handler(self.username, choice))
                 if code:
                     break
                 time.sleep(WAIT_SECONDS * attempt)
@@ -385,8 +389,9 @@ class ChallengeResolveMixin:
                 else:
                     raise ChallengeError(f'ChallengeResolve: Choice "email" or "phone_number" (sms) not available to this account {self.last_json}')
             wait_seconds = 5
+            loop = asyncio.get_event_loop()
             for attempt in range(24):
-                code = self.code
+                code = loop.run_until_complete(self.challenge_code_handler(self.username, ChallengeChoice.EMAIL))
                 if code:
                     break
                 time.sleep(wait_seconds)
