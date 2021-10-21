@@ -21,7 +21,8 @@ requirements = [
     'requests<3.0,>=2.25.1',
     'PySocks==1.7.1',
     'pydantic==1.8.2',
-    'pycryptodomex==3.9.9'
+    'pycryptodomex==3.9.9',
+    'nest_asyncio'
 ]
 # requirements = [
 #     line.strip()
