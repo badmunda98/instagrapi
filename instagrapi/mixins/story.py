@@ -289,3 +289,41 @@ class StoryMixin:
             response.raw.decode_content = True
             shutil.copyfileobj(response.raw, f)
         return path.resolve()
+
+    def story_viewers(self, story_pk: int, amount: int = 0) -> List[UserShort]:
+        """
+        List of story viewers (Private API)
+
+        Parameters
+        ----------
+        story_pk: int
+        amount: int, optional
+            Maximum number of story viewers
+
+        Returns
+        -------
+        List[UserShort]
+            A list of objects of UserShort
+        """
+        users = []
+        next_max_id = None
+        story_pk = self.media_pk(story_pk)
+        params = {"supported_capabilities_new": json.dumps(config.SUPPORTED_CAPABILITIES)}
+        while True:
+            try:
+                if next_max_id:
+                    params["max_id"] = next_max_id
+                result = self.private_request(f"media/{story_pk}/list_reel_media_viewer/", params=params)
+                for item in result['users']:
+                    users.append(extract_user_short(item))
+                if amount and len(users) >= amount:
+                    break
+                next_max_id = result.get('next_max_id')
+                if not next_max_id:
+                    break
+            except Exception as e:
+                self.logger.exception(e)
+                break
+        if amount:
+            users = users[:int(amount)]
+        return users
