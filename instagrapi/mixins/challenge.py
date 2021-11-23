@@ -10,6 +10,8 @@ from instagrapi.exceptions import (
     ChallengeError,
     ChallengeRedirection,
     ChallengeRequired,
+    ChallengeSelfieCaptcha,
+    ChallengeUnknownStep,
     LegacyForceSetNewPasswordForm,
     RecaptchaChallengeForm,
     SelectContactPointRecoveryForm,
@@ -418,6 +420,8 @@ class ChallengeResolveMixin:
                 time.sleep(wait_seconds)
             print(f'Password entered "{pwd}" for {self.username} ({attempt} attempts by {wait_seconds} seconds)')
             return self.bloks_change_password(pwd, self.last_json['challenge_context'])
+        elif step_name == "selfie_captcha":
+            raise ChallengeSelfieCaptcha(self.last_json)
         else:
-            raise Exception(f'ChallengeResolve: Unknown step_name "{step_name}" for "{self.username}" in challenge resolver: {self.last_json}')
+            raise ChallengeUnknownStep(f'ChallengeResolve: Unknown step_name "{step_name}" for "{self.username}" in challenge resolver: {self.last_json}')
         return True
