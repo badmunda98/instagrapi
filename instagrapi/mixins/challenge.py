@@ -179,7 +179,7 @@ class ChallengeResolveMixin:
                 break
             except ChallengeRedirection:
                 return True  # instagram redirect
-        loop = asyncio.get_running_loop()
+#       loop = asyncio.get_running_loop()
         assert result.get("challengeType") in (
             "VerifyEmailCodeForm",
             "VerifySMSCodeForm",
@@ -187,7 +187,7 @@ class ChallengeResolveMixin:
         ), result
         for retry_code in range(5):
             for attempt in range(1, 11):
-                code = self.code.get("CODE")
+                code = self.challenge_code_handler(self.username, choice)
                 if code:
                     break
                 time.sleep(WAIT_SECONDS * attempt)
@@ -389,7 +389,7 @@ class ChallengeResolveMixin:
                     raise ChallengeError(f'ChallengeResolve: Choice "email" or "phone_number" (sms) not available to this account {self.last_json}')
             wait_seconds = 5
             for attempt in range(24):
-                code = self.code.get("CODE")
+                code = self.challenge_code_handler(self.username, ChallengeChoice.EMAIL)
                 if code:
                     break
                 time.sleep(wait_seconds)
