@@ -152,7 +152,7 @@ class PostLoginFlowMixin:
     Helpers for post login flow
     """
 
-    def login_flow(self) -> bool:
+    async def login_flow(self) -> bool:
         """
         Emulation mobile app behaivor after login
 
@@ -164,8 +164,8 @@ class PostLoginFlowMixin:
         check_flow = []
         # chance = random.randint(1, 100) % 2 == 0
         # reason = "pull_to_refresh" if chance else "cold_start"
-        check_flow.append(self.get_reels_tray_feed("cold_start"))
-        check_flow.append(self.get_timeline_feed(["cold_start_fetch"]))
+        check_flow.append(await self.get_reels_tray_feed("cold_start"))
+        check_flow.append(await self.get_timeline_feed(["cold_start_fetch"]))
         return all(check_flow)
 
     async def get_timeline_feed(self, options: List[Dict] = ["pull_to_refresh"]) -> Dict:
@@ -450,7 +450,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         }
         return await self.private_request("accounts/one_tap_app_login/", data)
 
-    def relogin(self) -> bool:
+    async def relogin(self) -> bool:
         """
         Relogin helper
 
@@ -459,7 +459,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         bool
             A boolean value
         """
-        return self.login(self.username, self.password, relogin=True)
+        return await self.login(self.username, self.password, relogin=True)
 
     @property
     def cookie_dict(self) -> dict:
