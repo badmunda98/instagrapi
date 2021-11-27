@@ -92,12 +92,11 @@ class DownloadPhotoMixin:
         fname = urlparse(url).path.rsplit("/", 1)[1]
         filename = "%s.%s" % (filename, fname.rsplit(".", 1)[1]) if filename else fname
         path = Path(folder) / filename
-        async with ClientSession() as session:
-            async with session.get(url, stream=True) as response:
-                response.raise_for_status()
-                with open(path, "wb") as f:
-                    response.raw.decode_content = True
-                    shutil.copyfileobj(response.raw, f)
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        with open(path, "wb") as f:
+            response.raw.decode_content = True
+            shutil.copyfileobj(response.raw, f)
         return path.resolve()
 
 
