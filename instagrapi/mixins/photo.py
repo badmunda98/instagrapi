@@ -338,7 +338,7 @@ class UploadPhotoMixin:
             An object of Media class
         """
         path = Path(path)
-        upload_id, width, height = self.photo_rupload(path, upload_id)
+        upload_id, width, height = await self.photo_rupload(path, upload_id)
         for attempt in range(10):
             self.logger.debug(f"Attempt #{attempt} to configure Photo: {path}")
             await asyncio.sleep(3)
