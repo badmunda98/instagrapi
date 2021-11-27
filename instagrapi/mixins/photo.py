@@ -168,7 +168,7 @@ class UploadPhotoMixin:
             headers=headers,
            ) as response:
                self.request_log(response)
-        if response.status_code != 200:
+        if response.status != 200:
             self.logger.error(
                 "Photo Upload failed with the following response: %s", response
             )
