@@ -38,7 +38,7 @@ class DownloadVideoMixin:
     Helpers for downloading video
     """
 
-    def video_download(self, media_pk: int, folder: Path = "") -> Path:
+    async def video_download(self, media_pk: int, folder: Path = "") -> Path:
         """
         Download video using media pk
 
@@ -54,14 +54,14 @@ class DownloadVideoMixin:
         Path
             Path for the file downloaded
         """
-        media = self.media_info(media_pk)
+        media = await self.media_info(media_pk)
         assert media.media_type == 2, "Must been video"
         filename = "{username}_{media_pk}".format(
             username=media.user.username, media_pk=media_pk
         )
-        return self.video_download_by_url(media.video_url, filename, folder)
+        return await self.video_download_by_url(media.video_url, filename, folder)
 
-    def video_download_by_url(
+    async def video_download_by_url(
         self, url: str, filename: str = "", folder: Path = ""
     ) -> Path:
         """
@@ -104,7 +104,7 @@ class UploadVideoMixin:
     Helpers for downloading video
     """
 
-    def video_rupload(
+    async def video_rupload(
         self,
         path: Path,
         thumbnail: Path = None,
@@ -237,7 +237,7 @@ class UploadVideoMixin:
         path = Path(path)
         if thumbnail is not None:
             thumbnail = Path(thumbnail)
-        upload_id, width, height, duration, thumbnail = self.video_rupload(
+        upload_id, width, height, duration, thumbnail = await self.video_rupload(
             path, thumbnail, to_story=False
         )
         for attempt in range(50):
@@ -396,7 +396,7 @@ class UploadVideoMixin:
             self.logger.debug(f"Attempt #{attempt} to configure Video: {path}")
             await asyncio.sleep(3)
             try:
-                configured = self.video_configure_to_story(
+                configured = await self.video_configure_to_story(
                     upload_id,
                     width,
                     height,
@@ -756,7 +756,7 @@ class UploadVideoMixin:
             self.logger.debug(f"Attempt #{attempt} to configure Video: {path}")
             await asyncio.sleep(3)
             try:
-                configured = self.video_configure_to_story(
+                configured = await self.video_configure_to_story(
                     upload_id,
                     width,
                     height,
