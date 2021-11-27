@@ -44,7 +44,7 @@ class UserMixin:
         'adw0rd' -> 1903424587
         """
         username = str(username).lower()
-        return int(self.user_info_by_username(username).pk)
+        return int((await self.user_info_by_username(username)).pk)
 
     async def user_short_gql(self, user_id: int, use_cache: bool = True) -> UserShort:
         """
@@ -97,7 +97,7 @@ class UserMixin:
         -------
         1903424587 -> 'adw0rd'
         """
-        return self.user_short_gql(user_id).username
+        return await self.user_short_gql(user_id).username
 
     async def username_from_user_id(self, user_id: int) -> str:
         """
@@ -119,9 +119,9 @@ class UserMixin:
         """
         user_id = int(user_id)
         try:
-            username = self.username_from_user_id_gql(user_id)
+            username = await self.username_from_user_id_gql(user_id)
         except ClientError:
-            username = self.user_info_v1(user_id).username
+            username = await self.user_info_v1(user_id).username
         return username
 
     async def user_info_by_username_gql(self, username: str) -> User:
@@ -139,7 +139,7 @@ class UserMixin:
             An object of User type
         """
         username = str(username).lower()
-        return extract_user_gql(self.public_a1_request(f"/{username!s}/")["user"])
+        return extract_user_gql(await self.public_a1_request(f"/{username!s}/")["user"])
 
     async def user_info_by_username_v1(self, username: str) -> User:
         """
@@ -186,18 +186,18 @@ class UserMixin:
         if not use_cache or username not in self._usernames_cache:
             try:
                 try:
-                    user = self.user_info_by_username_gql(username)
+                    user = await self.user_info_by_username_gql(username)
                 except ClientLoginRequired as e:
                     if not self.inject_sessionid_to_public():
                         raise e
-                    user = self.user_info_by_username_gql(username)  # retry
+                    user = await self.user_info_by_username_gql(username)  # retry
             except Exception as e:
                 if not isinstance(e, ClientError):
                     self.logger.exception(e)  # Register unknown error
-                user = self.user_info_by_username_v1(username)
+                user = await self.user_info_by_username_v1(username)
             self._users_cache[user.pk] = user
             self._usernames_cache[user.username] = user.pk
-        return self.user_info(self._usernames_cache[username])
+        return await self.user_info(self._usernames_cache[username])
 
     async def user_info_gql(self, user_id: int) -> User:
         """
@@ -216,7 +216,7 @@ class UserMixin:
         user_id = int(user_id)
         try:
             # GraphQL haven't method to receive user by id
-            return self.user_info_by_username_gql(
+            return await self.user_info_by_username_gql(
                 self.username_from_user_id_gql(user_id)
             )
         except JSONDecodeError as e:
@@ -267,15 +267,15 @@ class UserMixin:
         if not use_cache or user_id not in self._users_cache:
             try:
                 try:
-                    user = self.user_info_gql(user_id)
+                    user = await self.user_info_gql(user_id)
                 except ClientLoginRequired as e:
                     if not self.inject_sessionid_to_public():
                         raise e
-                    user = self.user_info_gql(user_id)  # retry
+                    user = await self.user_info_gql(user_id)  # retry
             except Exception as e:
                 if not isinstance(e, ClientError):
                     self.logger.exception(e)
-                user = self.user_info_v1(user_id)
+                user = await self.user_info_v1(user_id)
             self._users_cache[user_id] = user
             self._usernames_cache[user.username] = user.pk
         return deepcopy(
@@ -291,7 +291,7 @@ class UserMixin:
         True if new feed exist ,
         After Login or load Settings always return False
         """
-        results = self.private_request("feed/new_feed_posts_exist/")
+        results = await self.private_request("feed/new_feed_posts_exist/")
         return results.get("new_feed_posts_exist", False)
 
     async def user_friendship_v1(self, user_id: int) -> Relationship:
@@ -310,7 +310,7 @@ class UserMixin:
         """
 
         try:
-            results = self.private_request(f"friendships/show/{user_id}/")
+            results = await self.private_request(f"friendships/show/{user_id}/")
             return Relationship(**results)
         except ClientError as e:
             self.logger.exception(e)
@@ -332,7 +332,7 @@ class UserMixin:
         List[UserShort]
             List of users
         """
-        results = self.private_request(
+        results = await self.private_request(
             f"friendships/{user_id}/followers/",
             params={
                 "search_surface": "follow_list_page",
@@ -359,7 +359,7 @@ class UserMixin:
         List[UserShort]
             List of User short object
         """
-        return self.search_followers_v1(user_id, query)
+        return await self.search_followers_v1(user_id, query)
 
     async def search_following_v1(self, user_id: int, query: str) -> List[UserShort]:
         """
@@ -377,7 +377,7 @@ class UserMixin:
         List[UserShort]
             List of users
         """
-        results = self.private_request(
+        results = await self.private_request(
             f"friendships/{user_id}/following/",
             params={
                 "includes_hashtags": "false",
@@ -405,7 +405,7 @@ class UserMixin:
         List[UserShort]
             List of User short object
         """
-        return self.search_following_v1(user_id, query)
+        return await self.search_following_v1(user_id, query)
 
     async def user_following_gql(self, user_id: int, amount: int = 0) -> List[UserShort]:
         """
@@ -436,7 +436,7 @@ class UserMixin:
         while True:
             if end_cursor:
                 variables["after"] = end_cursor
-            data = self.public_graphql_request(
+            data = await self.public_graphql_request(
                 variables, query_hash="e7e2f4da4b02303f74f0841279e52d76"
             )
             if not data["user"] and not users:
@@ -564,7 +564,7 @@ class UserMixin:
         while True:
             if end_cursor:
                 variables["after"] = end_cursor
-            data = self.public_graphql_request(
+            data = await self.public_graphql_request(
                 variables, query_hash="5aefa9893005572d237da5068082d8d5"
             )
             if not data["user"] and not users:
@@ -596,7 +596,7 @@ class UserMixin:
         List[UserShort]
             List of objects of User type
         """
-        users, _ = self.user_followers_gql_chunk(int(user_id), amount)
+        users, _ = await self.user_followers_gql_chunk(int(user_id), amount)
         if amount:
             users = users[:amount]
         return users
