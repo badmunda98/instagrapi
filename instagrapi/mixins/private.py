@@ -400,8 +400,8 @@ class PrivateRequestMixin:
         self.request_logger.info(
             "%s [%s] %s %s (%s)",
             self.username,
-            response.status_code,
-            response.request.method,
+            getattr(response, "status", None) or response.status_code,
+            (getattr(response, "request_info", None) or response.request).method,
             response.url,
             "{app_version}, {manufacturer} {model}".format(
                 app_version=self.device_settings.get("app_version"),
