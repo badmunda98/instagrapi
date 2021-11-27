@@ -158,7 +158,7 @@ class UploadPhotoMixin:
             "Content-Type": "application/octet-stream",
             "Content-Length": photo_len,
         }
-        response = await self.private.post(
+        response = self.private.post(
             "https://{domain}/rupload_igphoto/{name}".format(
                 domain=config.API_DOMAIN, name=upload_name
             ),
