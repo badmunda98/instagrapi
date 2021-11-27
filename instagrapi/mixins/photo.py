@@ -158,16 +158,15 @@ class UploadPhotoMixin:
             "Content-Type": "application/octet-stream",
             "Content-Length": photo_len,
         }
-        async with ClientSession() as session:
-            async with session.post(
+        response = await self.public.post(
             "https://{domain}/rupload_igphoto/{name}".format(
                 domain=config.API_DOMAIN, name=upload_name
             ),
             data=photo_data,
             headers=headers,
-           ) as response:
-               self.request_log(response)
-        if response.status != 200:
+        )
+        self.request_log(response)
+        if response.status_code != 200:
             self.logger.error(
                 "Photo Upload failed with the following response: %s", response
             )
