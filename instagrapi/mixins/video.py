@@ -1,7 +1,7 @@
 import random, json
 import subprocess
 import shlex
-import time
+import asyncio, time
 from pathlib import Path
 from typing import Dict, List
 from urllib.parse import urlparse
@@ -202,7 +202,7 @@ class UploadVideoMixin:
             raise VideoNotUpload(response.text, response=response, **self.last_json)
         return upload_id, width, height, duration, Path(thumbnail)
 
-    def video_upload(
+    async def video_upload(
         self,
         path: Path,
         caption: str,
@@ -242,7 +242,7 @@ class UploadVideoMixin:
         )
         for attempt in range(50):
             self.logger.debug(f"Attempt #{attempt} to configure Video: {path}")
-            time.sleep(3)
+            await asyncio.sleep(3)
             try:
                 configured = self.video_configure(
                     upload_id,
@@ -261,7 +261,7 @@ class UploadVideoMixin:
                     Response 202 status:
                     {"message": "Transcode not finished yet.", "status": "fail"}
                     """
-                    time.sleep(10)
+                    await asyncio.sleep(10)
                     continue
                 raise e
             else:
@@ -274,7 +274,7 @@ class UploadVideoMixin:
             **self.last_json
         )
 
-    def video_configure(
+    async def video_configure(
         self,
         upload_id: str,
         width: int,
@@ -338,11 +338,11 @@ class UploadVideoMixin:
             "caption": caption,
             **extra_data
         }
-        return self.private_request(
+        return await self.private_request(
             "media/configure/?video=1", self.with_default_data(data)
         )
 
-    def video_upload_to_story(
+    async def video_upload_to_story(
         self,
         path: Path,
         caption: str = "",
@@ -394,7 +394,7 @@ class UploadVideoMixin:
         )
         for attempt in range(50):
             self.logger.debug(f"Attempt #{attempt} to configure Video: {path}")
-            time.sleep(3)
+            await asyncio.sleep(3)
             try:
                 configured = self.video_configure_to_story(
                     upload_id,
@@ -417,7 +417,7 @@ class UploadVideoMixin:
                     Response 202 status:
                     {"message": "Transcode not finished yet.", "status": "fail"}
                     """
-                    time.sleep(10)
+                    await asyncio.sleep(10)
                     continue
                 raise e
             if configured:
@@ -436,7 +436,7 @@ class UploadVideoMixin:
             response=self.last_response, **self.last_json
         )
 
-    def video_configure_to_story(
+    async def video_configure_to_story(
         self,
         upload_id: str,
         width: int,
@@ -711,9 +711,9 @@ class UploadVideoMixin:
             data["static_models"] = dumps(static_models)
         if story_sticker_ids:
             data["story_sticker_ids"] = dumps(story_sticker_ids)
-        return self.private_request("media/configure_to_story/", self.with_default_data(data))
+        return await self.private_request("media/configure_to_story/", self.with_default_data(data))
 
-    def video_upload_to_direct(
+    async def video_upload_to_direct(
         self,
         path: Path,
         caption: str = "",
@@ -754,7 +754,7 @@ class UploadVideoMixin:
         )
         for attempt in range(50):
             self.logger.debug(f"Attempt #{attempt} to configure Video: {path}")
-            time.sleep(3)
+            await asyncio.sleep(3)
             try:
                 configured = self.video_configure_to_story(
                     upload_id,
@@ -774,7 +774,7 @@ class UploadVideoMixin:
                     Response 202 status:
                     {"message": "Transcode not finished yet.", "status": "fail"}
                     """
-                    time.sleep(10)
+                    await asyncio.sleep(10)
                     continue
                 raise e
             if configured and thread_ids:

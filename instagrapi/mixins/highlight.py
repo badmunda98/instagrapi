@@ -32,7 +32,7 @@ class HighlightMixin:
         parts = [p for p in path.split("/") if p and p.isdigit()]
         return int(parts[0])
 
-    def highlight_info_v1(self, highlight_pk: int) -> Highlight:
+    async def highlight_info_v1(self, highlight_pk: int) -> Highlight:
         """
         Get Highlight by pk or id (by Private Mobile API)
 
@@ -55,7 +55,7 @@ class HighlightMixin:
             "_uuid": self.uuid,
             "user_ids": [highlight_id]
         }
-        result = self.private_request('feed/reels_media/', data)
+        result = await self.private_request('feed/reels_media/', data)
         data = result['reels']
         if highlight_id not in data:
             raise HighlightNotFound(highlight_pk=highlight_pk, **data)

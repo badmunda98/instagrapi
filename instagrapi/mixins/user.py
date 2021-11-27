@@ -25,7 +25,7 @@ class UserMixin:
     _users_following = {}  # user_pk -> dict(user_pk -> "short user object")
     _users_followers = {}  # user_pk -> dict(user_pk -> "short user object")
 
-    def user_id_from_username(self, username: str) -> int:
+    async def user_id_from_username(self, username: str) -> int:
         """
         Get full media id
 
@@ -46,7 +46,7 @@ class UserMixin:
         username = str(username).lower()
         return int(self.user_info_by_username(username).pk)
 
-    def user_short_gql(self, user_id: int, use_cache: bool = True) -> UserShort:
+    async def user_short_gql(self, user_id: int, use_cache: bool = True) -> UserShort:
         """
         Get full media id
 
@@ -79,7 +79,7 @@ class UserMixin:
         self._userhorts_cache[user_id] = user
         return user
 
-    def username_from_user_id_gql(self, user_id: int) -> str:
+    async def username_from_user_id_gql(self, user_id: int) -> str:
         """
         Get username from user id
 
@@ -99,7 +99,7 @@ class UserMixin:
         """
         return self.user_short_gql(user_id).username
 
-    def username_from_user_id(self, user_id: int) -> str:
+    async def username_from_user_id(self, user_id: int) -> str:
         """
         Get username from user id
 
@@ -124,7 +124,7 @@ class UserMixin:
             username = self.user_info_v1(user_id).username
         return username
 
-    def user_info_by_username_gql(self, username: str) -> User:
+    async def user_info_by_username_gql(self, username: str) -> User:
         """
         Get user object from user name
 
@@ -141,7 +141,7 @@ class UserMixin:
         username = str(username).lower()
         return extract_user_gql(self.public_a1_request(f"/{username!s}/")["user"])
 
-    def user_info_by_username_v1(self, username: str) -> User:
+    async def user_info_by_username_v1(self, username: str) -> User:
         """
         Get user object from user name
 
@@ -157,7 +157,7 @@ class UserMixin:
         """
         username = str(username).lower()
         try:
-            result = self.private_request(f"users/{username}/usernameinfo/")
+            result = await self.private_request(f"users/{username}/usernameinfo/")
         except ClientNotFoundError as e:
             raise UserNotFound(e, username=username, **self.last_json)
         except ClientError as e:
@@ -166,7 +166,7 @@ class UserMixin:
             raise e
         return extract_user_v1(result["user"])
 
-    def user_info_by_username(self, username: str, use_cache: bool = True) -> User:
+    async def user_info_by_username(self, username: str, use_cache: bool = True) -> User:
         """
         Get user object from username
 
@@ -199,7 +199,7 @@ class UserMixin:
             self._usernames_cache[user.username] = user.pk
         return self.user_info(self._usernames_cache[username])
 
-    def user_info_gql(self, user_id: int) -> User:
+    async def user_info_gql(self, user_id: int) -> User:
         """
         Get user object from user id
 
@@ -222,7 +222,7 @@ class UserMixin:
         except JSONDecodeError as e:
             raise ClientJSONDecodeError(e, user_id=user_id)
 
-    def user_info_v1(self, user_id: int) -> User:
+    async def user_info_v1(self, user_id: int) -> User:
         """
         Get user object from user id
 
@@ -238,7 +238,7 @@ class UserMixin:
         """
         user_id = int(user_id)
         try:
-            result = self.private_request(f"users/{user_id}/info/")
+            result = await self.private_request(f"users/{user_id}/info/")
         except ClientNotFoundError as e:
             raise UserNotFound(e, user_id=user_id, **self.last_json)
         except ClientError as e:
@@ -247,7 +247,7 @@ class UserMixin:
             raise e
         return extract_user_v1(result["user"])
 
-    def user_info(self, user_id: int, use_cache: bool = True) -> User:
+    async def user_info(self, user_id: int, use_cache: bool = True) -> User:
         """
         Get user object from user id
 
@@ -282,7 +282,7 @@ class UserMixin:
             self._users_cache[user_id]
         )  # return copy of cache (dict changes protection)
 
-    def new_feed_exist(self) -> bool:
+    async def new_feed_exist(self) -> bool:
         """
         Returns bool
         -------
@@ -294,7 +294,7 @@ class UserMixin:
         results = self.private_request("feed/new_feed_posts_exist/")
         return results.get("new_feed_posts_exist", False)
 
-    def user_friendship_v1(self, user_id: int) -> Relationship:
+    async def user_friendship_v1(self, user_id: int) -> Relationship:
         """
         Get user friendship status
 
@@ -316,7 +316,7 @@ class UserMixin:
             self.logger.exception(e)
             return None
 
-    def search_followers_v1(self, user_id: int, query: str) -> List[UserShort]:
+    async def search_followers_v1(self, user_id: int, query: str) -> List[UserShort]:
         """
         Search users by followers (Private Mobile API)
 
@@ -343,7 +343,7 @@ class UserMixin:
         users = results.get("users", [])
         return [extract_user_short(user) for user in users]
 
-    def search_followers(self, user_id: int, query: str) -> List[UserShort]:
+    async def search_followers(self, user_id: int, query: str) -> List[UserShort]:
         """
         Search by followers
 
@@ -361,7 +361,7 @@ class UserMixin:
         """
         return self.search_followers_v1(user_id, query)
 
-    def search_following_v1(self, user_id: int, query: str) -> List[UserShort]:
+    async def search_following_v1(self, user_id: int, query: str) -> List[UserShort]:
         """
         Search following users (Private Mobile API)
 
@@ -389,7 +389,7 @@ class UserMixin:
         users = results.get("users", [])
         return [extract_user_short(user) for user in users]
 
-    def search_following(self, user_id: int, query: str) -> List[UserShort]:
+    async def search_following(self, user_id: int, query: str) -> List[UserShort]:
         """
         Search by following
 
@@ -407,7 +407,7 @@ class UserMixin:
         """
         return self.search_following_v1(user_id, query)
 
-    def user_following_gql(self, user_id: int, amount: int = 0) -> List[UserShort]:
+    async def user_following_gql(self, user_id: int, amount: int = 0) -> List[UserShort]:
         """
         Get user's following information by Public Graphql API
 
@@ -450,12 +450,12 @@ class UserMixin:
                 break
             if amount and len(users) >= amount:
                 break
-            # time.sleep(sleep)
+            # await asyncio.sleep(sleep)
         if amount:
             users = users[:amount]
         return users
 
-    def user_following_v1(self, user_id: int, amount: int = 0) -> List[UserShort]:
+    async def user_following_v1(self, user_id: int, amount: int = 0) -> List[UserShort]:
         """
         Get user's following users information by Private Mobile API
 
@@ -486,7 +486,7 @@ class UserMixin:
             }
             if max_id:
                 params["max_id"] = max_id
-            result = self.private_request(f"friendships/{user_id}/following/", params=params)
+            result = await self.private_request(f"friendships/{user_id}/following/", params=params)
             for user in result["users"]:
                 users.append(extract_user_short(user))
             max_id = result.get("next_max_id")
@@ -496,7 +496,7 @@ class UserMixin:
             users = users[:amount]
         return users
 
-    def user_following(
+    async def user_following(
         self, user_id: int, use_cache: bool = True, amount: int = 0
     ) -> Dict[int, UserShort]:
         """
@@ -534,7 +534,7 @@ class UserMixin:
             following = dict(list(following.items())[:amount])
         return following
 
-    def user_followers_gql_chunk(self, user_id: int, max_amount: int = 0, end_cursor: str = None) -> Tuple[List[UserShort], str]:
+    async def user_followers_gql_chunk(self, user_id: int, max_amount: int = 0, end_cursor: str = None) -> Tuple[List[UserShort], str]:
         """
         Get user's followers information by Public Graphql API and end_cursor
 
@@ -580,7 +580,7 @@ class UserMixin:
                 break
         return users, end_cursor
 
-    def user_followers_gql(self, user_id: int, amount: int = 0) -> List[UserShort]:
+    async def user_followers_gql(self, user_id: int, amount: int = 0) -> List[UserShort]:
         """
         Get user's followers information by Public Graphql API
 
@@ -601,7 +601,7 @@ class UserMixin:
             users = users[:amount]
         return users
 
-    def user_followers_v1_chunk(self, user_id: int, max_amount: int = 0, max_id: str = "") -> Tuple[List[UserShort], str]:
+    async def user_followers_v1_chunk(self, user_id: int, max_amount: int = 0, max_id: str = "") -> Tuple[List[UserShort], str]:
         """
         Get user's followers information by Private Mobile API and max_id (cursor)
 
@@ -622,7 +622,7 @@ class UserMixin:
         unique_set = set()
         users = []
         while True:
-            result = self.private_request(f"friendships/{user_id}/followers/", params={
+            result = await self.private_request(f"friendships/{user_id}/followers/", params={
                 "max_id": max_id,
                 "rank_token": self.rank_token,
                 "search_surface": "follow_list_page",
@@ -640,7 +640,7 @@ class UserMixin:
                 break
         return users, max_id
 
-    def user_followers_v1(self, user_id: int, amount: int = 0) -> List[UserShort]:
+    async def user_followers_v1(self, user_id: int, amount: int = 0) -> List[UserShort]:
         """
         Get user's followers information by Private Mobile API
 
@@ -661,7 +661,7 @@ class UserMixin:
             users = users[:amount]
         return users
 
-    def user_followers(
+    async def user_followers(
         self, user_id: int, use_cache: bool = True, amount: int = 0
     ) -> Dict[int, UserShort]:
         """
@@ -696,7 +696,7 @@ class UserMixin:
             followers = dict(list(followers.items())[:amount])
         return followers
 
-    def user_follow(self, user_id: int) -> bool:
+    async def user_follow(self, user_id: int) -> bool:
         """
         Follow a user
 
@@ -715,12 +715,12 @@ class UserMixin:
             self.logger.debug("User %s already followed", user_id)
             return False
         data = self.with_action_data({"user_id": user_id})
-        result = self.private_request(f"friendships/create/{user_id}/", data)
+        result = await self.private_request(f"friendships/create/{user_id}/", data)
         if self.user_id in self._users_following:
             self._users_following.pop(self.user_id)  # reset
         return result["friendship_status"]["following"] is True
 
-    def user_unfollow(self, user_id: int) -> bool:
+    async def user_unfollow(self, user_id: int) -> bool:
         """
         Unfollow a user
 
@@ -736,12 +736,12 @@ class UserMixin:
         assert self.user_id, "Login required"
         user_id = int(user_id)
         data = self.with_action_data({"user_id": user_id})
-        result = self.private_request(f"friendships/destroy/{user_id}/", data)
+        result = await self.private_request(f"friendships/destroy/{user_id}/", data)
         if self.user_id in self._users_following:
             self._users_following[self.user_id].pop(user_id, None)
         return result["friendship_status"]["following"] is False
 
-    def user_remove_follower(self, user_id: int) -> bool:
+    async def user_remove_follower(self, user_id: int) -> bool:
         """
         Remove a follower
 
@@ -757,12 +757,12 @@ class UserMixin:
         assert self.user_id, "Login required"
         user_id = int(user_id)
         data = self.with_action_data({"user_id": str(user_id)})
-        result = self.private_request(f"friendships/remove_follower/{user_id}/", data)
+        result = await self.private_request(f"friendships/remove_follower/{user_id}/", data)
         if self.user_id in self._users_followers:
             self._users_followers[self.user_id].pop(user_id, None)
         return result["friendship_status"]["followed_by"] is False
 
-    def mute_posts_from_follow(self, user_id: int, revert: bool = False) -> bool:
+    async def mute_posts_from_follow(self, user_id: int, revert: bool = False) -> bool:
         """
         Mute posts from following user
 
@@ -780,7 +780,7 @@ class UserMixin:
         """
         user_id = int(user_id)
         name = "unmute" if revert else "mute"
-        result = self.private_request(
+        result = await self.private_request(
             f"friendships/{name}_posts_or_story_from_follow/",
             {
                 # "media_id": media_pk,  # when feed_timeline
@@ -790,7 +790,7 @@ class UserMixin:
         )
         return result["status"] == "ok"
 
-    def unmute_posts_from_follow(self, user_id: int) -> bool:
+    async def unmute_posts_from_follow(self, user_id: int) -> bool:
         """
         Unmute posts from following user
 
@@ -806,7 +806,7 @@ class UserMixin:
         """
         return self.mute_posts_from_follow(user_id, True)
 
-    def mute_stories_from_follow(self, user_id: int, revert: bool = False) -> bool:
+    async def mute_stories_from_follow(self, user_id: int, revert: bool = False) -> bool:
         """
         Mute stories from following user
 
@@ -824,7 +824,7 @@ class UserMixin:
         """
         user_id = int(user_id)
         name = "unmute" if revert else "mute"
-        result = self.private_request(
+        result = await self.private_request(
             f"friendships/{name}_posts_or_story_from_follow/",
             {
                 # "media_id": media_pk,  # when feed_timeline
@@ -834,7 +834,7 @@ class UserMixin:
         )
         return result["status"] == "ok"
 
-    def unmute_stories_from_follow(self, user_id: int) -> bool:
+    async def unmute_stories_from_follow(self, user_id: int) -> bool:
         """
         Unmute stories from following user
 

@@ -10,7 +10,7 @@ class TOTP:
     """
     Base class for OTP handlers.
     """
-    def __init__(self, s: str, digits: int = 6, digest: Any = hashlib.sha1, name: Optional[str] = None,
+    async def __init__(self, s: str, digits: int = 6, digest: Any = hashlib.sha1, name: Optional[str] = None,
                  issuer: Optional[str] = None) -> None:
         self.digits = digits
         self.digest = digest
@@ -19,7 +19,7 @@ class TOTP:
         self.issuer = issuer
         self.interval = 30
 
-    def generate_otp(self, input: int) -> str:
+    async def generate_otp(self, input: int) -> str:
         """
             :param input: the HMAC counter value to use as the OTP input.
             Usually either the counter, or the computed integer based on the Unix timestamp
@@ -38,7 +38,7 @@ class TOTP:
             str_code = '0' + str_code
         return str_code
 
-    def byte_secret(self) -> bytes:
+    async def byte_secret(self) -> bytes:
         secret = self.secret
         missing_padding = len(secret) % 8
         if missing_padding != 0:
@@ -46,7 +46,7 @@ class TOTP:
         return base64.b32decode(secret, casefold=True)
 
     @staticmethod
-    def int_to_bytestring(i: int, padding: int = 8) -> bytes:
+    async def int_to_bytestring(i: int, padding: int = 8) -> bytes:
         """
         Turns an integer to the OATH specified
         bytestring, which is fed to the HMAC
@@ -61,7 +61,7 @@ class TOTP:
             # bytearray
         return bytes(bytearray(reversed(result)).rjust(padding, b'\0'))
 
-    def code(self):
+    async def code(self):
         """
         Generate TOTP code
         """
@@ -72,7 +72,7 @@ class TOTP:
 
 class TOTPMixin:
 
-    def totp_generate_seed(self) -> str:
+    async def totp_generate_seed(self) -> str:
         """
         Generate 2FA TOTP seed
 
@@ -81,13 +81,13 @@ class TOTPMixin:
         str
             TOTP seed (also known as "token" and "secret key")
         """
-        result = self.private_request(
+        result = await self.private_request(
             "accounts/generate_two_factor_totp_key/",
             data=self.with_default_data({})
         )
         return result["totp_seed"]
 
-    def totp_enable(self, verification_code: str) -> List[str]:
+    async def totp_enable(self, verification_code: str) -> List[str]:
         """
         Enable TOTP 2FA
 
@@ -101,13 +101,13 @@ class TOTPMixin:
         List[str]
             Backup codes
         """
-        result = self.private_request(
+        result = await self.private_request(
             "accounts/enable_totp_two_factor/",
             data=self.with_default_data({'verification_code': verification_code})
         )
         return result["backup_codes"]
 
-    def totp_disable(self) -> bool:
+    async def totp_disable(self) -> bool:
         """
         Disable TOTP 2FA
 
@@ -115,13 +115,13 @@ class TOTPMixin:
         -------
         bool
         """
-        result = self.private_request(
+        result = await self.private_request(
             "accounts/disable_totp_two_factor/",
             data=self.with_default_data({})
         )
         return result["status"] == "ok"
 
-    def totp_generate_code(self, seed: str) -> str:
+    async def totp_generate_code(self, seed: str) -> str:
         """
         Generate 2FA TOTP code
 

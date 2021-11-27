@@ -37,6 +37,7 @@ from instagrapi.mixins.video import DownloadVideoMixin, UploadVideoMixin
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+LOGGER = logging.getLogger("instagrapi")
 
 class Client(
     PublicRequestMixin,
@@ -74,12 +75,11 @@ class Client(
     TOTPMixin,
 ):
     proxy = None
-    logger = logging.getLogger("instagrapi")
+    logger = LOGGER
 
     def __init__(self, settings: dict = {}, proxy: str = None, **kwargs):
         super().__init__(**kwargs)
         self.settings = settings
-        self.code = {}
         self.set_proxy(proxy)
         self.init()
 

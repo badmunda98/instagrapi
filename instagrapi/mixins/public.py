@@ -1,6 +1,6 @@
 import json
 import logging
-import time
+import asyncio
 
 try:
     from simplejson.errors import JSONDecodeError
@@ -49,7 +49,7 @@ class PublicRequestMixin:
         self.request_timeout = kwargs.pop("request_timeout", self.request_timeout)
         super().__init__(*args, **kwargs)
 
-    def public_request(
+    async def public_request(
         self,
         url,
         data=None,
@@ -84,19 +84,19 @@ class PublicRequestMixin:
                 )):
                     raise e
                 if retries_count > iteration + 1:
-                    time.sleep(retries_timeout)
+                    await asyncio.sleep(retries_timeout)
                 else:
                     raise e
                 continue
 
-    def _send_public_request(
+    async def _send_public_request(
         self, url, data=None, params=None, headers=None, return_json=False
     ):
         self.public_requests_count += 1
         if headers:
             self.public.headers.update(headers)
         if self.request_timeout:
-            time.sleep(self.request_timeout)
+            await asyncio.sleep(self.request_timeout)
         try:
             if data is not None:  # POST
                 response = self.public.data(url, data=data, params=params)

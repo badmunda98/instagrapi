@@ -11,7 +11,7 @@ class CommentMixin:
     Helpers for managing comments on a Media
     """
 
-    def media_comments(self, media_id: str, amount: int = 20) -> List[Comment]:
+    async def media_comments(self, media_id: str, amount: int = 20) -> List[Comment]:
         """
         Get comments on a media
 
@@ -35,7 +35,7 @@ class CommentMixin:
         media_id = self.media_id(media_id)
         params = None
         comments = []
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/comments/", params
         )
         get_comments()
@@ -49,7 +49,7 @@ class CommentMixin:
                 if not (result.get("next_max_id") or result.get("next_min_id")
                         or result.get("comments")):
                     break
-                result = self.private_request(
+                result = await self.private_request(
                     f"media/{media_id}/comments/", params
                 )
                 get_comments()
@@ -65,7 +65,7 @@ class CommentMixin:
             comments = comments[:amount]
         return comments
 
-    def media_comment(self, media_id: str, text: str) -> Comment:
+    async def media_comment(self, media_id: str, text: str) -> Comment:
         """
         Post a comment on a media
 
@@ -83,7 +83,7 @@ class CommentMixin:
         """
         assert self.user_id, "Login required"
         media_id = self.media_id(media_id)
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/comment/",
             self.with_action_data(
                 {
@@ -98,7 +98,7 @@ class CommentMixin:
         )
         return extract_comment(result["comment"])
 
-    def comment_like(self, comment_pk: int, revert: bool = False) -> bool:
+    async def comment_like(self, comment_pk: int, revert: bool = False) -> bool:
         """
         Like a comment on a media
 
@@ -122,7 +122,7 @@ class CommentMixin:
             "feed_position": str(random.randint(0, 6)),
         }
         name = "unlike" if revert else "like"
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{comment_pk}/comment_{name}/", self.with_action_data(data)
         )
         return result["status"] == "ok"
@@ -143,7 +143,7 @@ class CommentMixin:
         """
         return self.comment_like(comment_pk, revert=True)
 
-    def comment_bulk_delete(self, media_id: str, comment_pks: List[int]) -> bool:
+    async def comment_bulk_delete(self, media_id: str, comment_pks: List[int]) -> bool:
         """
         Delete a comment on a media
 
@@ -164,7 +164,7 @@ class CommentMixin:
             "comment_ids_to_delete": ','.join([str(pk) for pk in comment_pks]),
             "container_module": "self_comments_v2_newsfeed_you"
         }
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/comment/bulk_delete/",
             self.with_action_data(data)
         )

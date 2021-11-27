@@ -290,7 +290,7 @@ class StoryMixin:
             shutil.copyfileobj(response.raw, f)
         return path.resolve()
 
-    def story_viewers(self, story_pk: int, amount: int = 0) -> List[UserShort]:
+    async def story_viewers(self, story_pk: int, amount: int = 0) -> List[UserShort]:
         """
         List of story viewers (Private API)
 
@@ -313,7 +313,7 @@ class StoryMixin:
             try:
                 if next_max_id:
                     params["max_id"] = next_max_id
-                result = self.private_request(f"media/{story_pk}/list_reel_media_viewer/", params=params)
+                result = await self.private_request(f"media/{story_pk}/list_reel_media_viewer/", params=params)
                 for item in result['users']:
                     users.append(extract_user_short(item))
                 if amount and len(users) >= amount:

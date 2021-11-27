@@ -1,5 +1,5 @@
 import json
-import time
+import asyncio
 from typing import List, Tuple
 
 from instagrapi.exceptions import ClientNotFoundError, LocationNotFound
@@ -15,7 +15,7 @@ class LocationMixin:
     Helper class to get location
     """
 
-    def location_search(self, lat: float, lng: float) -> List[Location]:
+    async def location_search(self, lat: float, lng: float) -> List[Location]:
         """
         Get locations using lat and long
 
@@ -37,7 +37,7 @@ class LocationMixin:
             # rankToken=c544eea5-726b-4091-a916-a71a35a76474 - self.uuid?
             # fb_access_token=EAABwzLixnjYBABK2YBFkT...pKrjju4cijEGYtcbIyCSJ0j4ZD
         }
-        result = self.private_request("location_search/", params=params)
+        result = await self.private_request("location_search/", params=params)
         locations = []
         for venue in result["venues"]:
             if "lat" not in venue:
@@ -136,7 +136,7 @@ class LocationMixin:
         except ClientNotFoundError:
             raise LocationNotFound(location_pk=location_pk)
 
-    def location_info_v1(self, location_pk: int) -> Location:
+    async def location_info_v1(self, location_pk: int) -> Location:
         """
         Get a location using location pk
 
@@ -150,7 +150,7 @@ class LocationMixin:
         Location
             An object of Location
         """
-        result = self.private_request(f"locations/{location_pk}/location_info/")
+        result = await self.private_request(f"locations/{location_pk}/location_info/")
         return extract_location(result)
 
     def location_info(self, location_pk: int) -> Location:
@@ -177,7 +177,7 @@ class LocationMixin:
             location = self.location_info_v1(location_pk)
         return location
 
-    def location_medias_a1_chunk(
+    async def location_medias_a1_chunk(
         self, location_pk: int, max_amount: int = 24, sleep: float = 0.5, tab_key: str = "", max_id: str = None
     ) -> Tuple[List[Media], str]:
         """
@@ -228,7 +228,7 @@ class LocationMixin:
                 break
             if max_amount and len(medias) >= max_amount:
                 break
-            time.sleep(sleep)
+            await asyncio.sleep(sleep)
         return medias, end_cursor
 
     def location_medias_a1(
@@ -259,7 +259,7 @@ class LocationMixin:
             medias = medias[:amount]
         return medias
 
-    def location_medias_v1_chunk(
+    async def location_medias_v1_chunk(
         self, location_pk: int, max_amount: int = 63, tab_key: str = "", max_id: str = None
     ) -> Tuple[List[Media], str]:
         """
@@ -289,7 +289,7 @@ class LocationMixin:
         }
         medias = []
         while True:
-            result = self.private_request(
+            result = await self.private_request(
                 f"locations/{location_pk}/sections/",
                 params={"max_id": max_id} if max_id else {},
                 data=data,

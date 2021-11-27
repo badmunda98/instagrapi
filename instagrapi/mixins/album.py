@@ -1,4 +1,4 @@
-import time
+import asyncio, time
 from pathlib import Path
 from typing import Dict, List
 from urllib.parse import urlparse
@@ -82,7 +82,7 @@ class DownloadAlbumMixin:
 
 
 class UploadAlbumMixin:
-    def album_upload(
+    async def album_upload(
         self,
         paths: List[Path],
         caption: str,
@@ -170,7 +170,7 @@ class UploadAlbumMixin:
 
         for attempt in range(50):
             self.logger.debug(f"Attempt #{attempt} to configure Album: {paths}")
-            time.sleep(configure_timeout)
+            await asyncio.sleep(configure_timeout)
             try:
                 configured = (configure_handler or self.album_configure)(
                     children, caption, usertags, location, extra_data=extra_data
@@ -181,7 +181,7 @@ class UploadAlbumMixin:
                     Response 202 status:
                     {"message": "Transcode not finished yet.", "status": "fail"}
                     """
-                    time.sleep(configure_timeout)
+                    await asyncio.sleep(configure_timeout)
                     continue
                 raise e
             else:
@@ -193,7 +193,7 @@ class UploadAlbumMixin:
             response=self.last_response, **self.last_json
         )
 
-    def album_configure(
+    async def album_configure(
         self,
         childs: List,
         caption: str,
@@ -251,6 +251,6 @@ class UploadAlbumMixin:
             ],
             **extra_data
         }
-        return self.private_request(
+        return await self.private_request(
             "media/configure_sidecar/", self.with_default_data(data)
         )

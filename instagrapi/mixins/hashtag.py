@@ -71,7 +71,7 @@ class HashtagMixin:
             raise HashtagNotFound(name=name, **data)
         return extract_hashtag_gql(data["hashtag"])
 
-    def hashtag_info_v1(self, name: str) -> Hashtag:
+    async def hashtag_info_v1(self, name: str) -> Hashtag:
         """
         Get information about a hashtag by Private Mobile API
 
@@ -85,7 +85,7 @@ class HashtagMixin:
         Hashtag
             An object of Hashtag
         """
-        result = self.private_request(f"tags/{name}/info/")
+        result = await self.private_request(f"tags/{name}/info/")
         return extract_hashtag_v1(result)
 
     def hashtag_info(self, name: str) -> Hashtag:
@@ -222,7 +222,7 @@ class HashtagMixin:
             medias = medias[:amount]
         return medias
 
-    def hashtag_medias_v1_chunk(
+    async def hashtag_medias_v1_chunk(
         self, name: str, max_amount: int = 27, tab_key: str = "", max_id: str = None
     ) -> Tuple[List[Media], str]:
         """
@@ -255,7 +255,7 @@ class HashtagMixin:
         }
         medias = []
         while True:
-            result = self.private_request(
+            result = await self.private_request(
                 f"tags/{name}/sections/",
                 params={"max_id": max_id} if max_id else {},
                 data=self.with_default_data(data),

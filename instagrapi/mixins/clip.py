@@ -1,6 +1,6 @@
 import json
 import random
-import time
+import asyncio, time
 import subprocess
 import shlex
 from pathlib import Path
@@ -16,7 +16,8 @@ from instagrapi.utils import date_time_original
 try:
     from PIL import Image
 except ImportError:
-    raise Exception("You don't have PIL installed. Please install PIL or Pillow>=8.1.1")
+    Image = None
+    #raise Exception("You don't have PIL installed. Please install PIL or Pillow>=8.1.1")
 
 
 class DownloadClipMixin:
@@ -68,7 +69,7 @@ class UploadClipMixin:
     Helpers to upload CLIP videos
     """
 
-    def clip_upload(
+    async def clip_upload(
         self,
         path: Path,
         caption: str,
@@ -168,7 +169,7 @@ class UploadClipMixin:
         # self.igtv_composer_session_id = self.generate_uuid()  #issue
         for attempt in range(50):
             self.logger.debug(f"Attempt #{attempt} to configure CLIP: {path}")
-            time.sleep(configure_timeout)
+            await asyncio.sleep(configure_timeout)
             try:
                 configured = self.clip_configure(
                     upload_id,
@@ -188,7 +189,7 @@ class UploadClipMixin:
                     Response 202 status:
                     {"message": "Transcode not finished yet.", "status": "fail"}
                     """
-                    time.sleep(configure_timeout)
+                    await asyncio.sleep(configure_timeout)
                     continue
                 raise e
             else:
@@ -198,7 +199,7 @@ class UploadClipMixin:
                     return extract_media_v1(media)
         raise ClipConfigureError(response=self.last_response, **self.last_json)
 
-    def clip_configure(
+    async def clip_configure(
         self,
         upload_id: str,
         thumbnail: Path,
@@ -266,7 +267,7 @@ class UploadClipMixin:
             "poster_frame_index": 70,
             **extra_data
         }
-        return self.private_request(
+        return await self.private_request(
             "media/configure_to_clips/?video=1",
             self.with_default_data(data),
             with_signature=True,

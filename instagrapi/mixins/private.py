@@ -1,11 +1,11 @@
 import json
 import logging
 import random
-import time
+import asyncio, time
 from json.decoder import JSONDecodeError
 
 import requests
-
+from aiohttp import ClientSession
 from instagrapi import config
 from instagrapi.exceptions import (
     BadPassword,
@@ -88,7 +88,8 @@ class PrivateRequestMixin:
             "request_timeout", self.request_timeout)
         super().__init__(*args, **kwargs)
 
-    def small_delay(self):
+
+    async def small_delay(self):
         """
         Small Delay
 
@@ -96,9 +97,9 @@ class PrivateRequestMixin:
         -------
         Void
         """
-        time.sleep(random.uniform(0.75, 3.75))
+        await asyncio.sleep(random.uniform(0.75, 3.75))
 
-    def very_small_delay(self):
+    async def very_small_delay(self):
         """
         Very small delay
 
@@ -106,7 +107,7 @@ class PrivateRequestMixin:
         -------
         Void
         """
-        time.sleep(random.uniform(0.175, 0.875))
+        await asyncio.sleep(random.uniform(0.175, 0.875))
 
     @property
     def base_headers(self):
@@ -254,7 +255,7 @@ class PrivateRequestMixin:
     def with_query_params(data, params):
         return dict(data, **{"query_params": json.dumps(params, separators=(",", ":"))})
 
-    def _send_private_request(
+    async def _send_private_request(
         self,
         endpoint,
         data=None,
@@ -270,7 +271,7 @@ class PrivateRequestMixin:
         if headers:
             self.private.headers.update(headers)
         if not login:
-            time.sleep(self.request_timeout)
+            await asyncio.sleep(self.request_timeout)
         # if self.user_id and login:
         #     raise Exception(f"User already logged ({self.user_id})")
         try:
@@ -288,7 +289,7 @@ class PrivateRequestMixin:
                         data += "&".join(extra_sig)
                 response = self.private.post(
                     api_url, data=data, params=params
-                )
+                    )
             else:  # GET
                 self.private.headers.pop('Content-Type', None)
                 response = self.private.get(api_url, params=params)
@@ -409,7 +410,7 @@ class PrivateRequestMixin:
             ),
         )
 
-    def private_request(
+    async def private_request(
         self,
         endpoint,
         data=None,
@@ -434,22 +435,22 @@ class PrivateRequestMixin:
         )
         try:
             self.private_requests_count += 1
-            self._send_private_request(endpoint, **kwargs)
+            await self._send_private_request(endpoint, **kwargs)
         except ClientRequestTimeout:
             self.logger.info('Wait 60 seconds and try one more time (ClientRequestTimeout)')
-            time.sleep(60)
-            return self._send_private_request(endpoint, **kwargs)
+            await asyncio.sleep(60)
+            return await self._send_private_request(endpoint, **kwargs)
         # except BadPassword as e:
         #     raise e
         except Exception as e:
             if self.handle_exception:
                 self.handle_exception(self, e)
             elif isinstance(e, ChallengeRequired):
-                self.challenge_resolve(self.last_json)
+                await self.challenge_resolve(self.last_json)
             else:
                 raise e
             if login and self.user_id:
                 # After challenge resolve return last_json
                 return self.last_json
-            return self._send_private_request(endpoint, **kwargs)
+            return await self._send_private_request(endpoint, **kwargs)
         return self.last_json

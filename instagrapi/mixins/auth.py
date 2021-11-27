@@ -33,7 +33,7 @@ class PreLoginFlowMixin:
     Helpers for pre login flow
     """
 
-    def pre_login_flow(self) -> bool:
+    async def pre_login_flow(self) -> bool:
         """
         Emulation mobile app behavior before login
 
@@ -44,12 +44,12 @@ class PreLoginFlowMixin:
         """
         # self.set_contact_point_prefill("prefill")
         # self.get_prefill_candidates(True)
-        self.set_contact_point_prefill("prefill")
-        self.sync_launcher(True)
+        await self.set_contact_point_prefill("prefill")
+        await self.sync_launcher(True)
         # self.sync_device_features(True)
         return True
 
-    def get_prefill_candidates(self, login: bool = False) -> Dict:
+    async def get_prefill_candidates(self, login: bool = False) -> Dict:
         """
         Get prefill candidates value from Instagram
 
@@ -73,9 +73,9 @@ class PreLoginFlowMixin:
         }
         # if login is False:
         data["_csrftoken"] = self.token
-        return self.private_request("accounts/get_prefill_candidates/", data, login=login)
+        return await self.private_request("accounts/get_prefill_candidates/", data, login=login)
 
-    def sync_device_features(self, login: bool = False) -> Dict:
+    async def sync_device_features(self, login: bool = False) -> Dict:
         """
         Sync device features to your Instagram account
 
@@ -99,9 +99,9 @@ class PreLoginFlowMixin:
             data["_uid"] = self.user_id
             data["_csrftoken"] = self.token
         # headers={"X-DEVICE-ID": self.uuid}
-        return self.private_request("qe/sync/", data, login=login)
+        return await self.private_request("qe/sync/", data, login=login)
 
-    def sync_launcher(self, login: bool = False) -> Dict:
+    async def sync_launcher(self, login: bool = False) -> Dict:
         """
         Sync Launcher
 
@@ -123,9 +123,9 @@ class PreLoginFlowMixin:
             data["_uid"] = self.user_id
             data["_uuid"] = self.uuid
             data["_csrftoken"] = self.token
-        return self.private_request("launcher/sync/", data, login=login)
+        return await self.private_request("launcher/sync/", data, login=login)
 
-    def set_contact_point_prefill(self, usage: str = "prefill") -> Dict:
+    async def set_contact_point_prefill(self, usage: str = "prefill") -> Dict:
         """
         Sync Launcher
 
@@ -144,7 +144,7 @@ class PreLoginFlowMixin:
             "usage": usage,
             # "_csrftoken": self.token
         }
-        return self.private_request("accounts/contact_point_prefill/", data, login=True)
+        return await self.private_request("accounts/contact_point_prefill/", data, login=True)
 
 
 class PostLoginFlowMixin:
@@ -168,7 +168,7 @@ class PostLoginFlowMixin:
         check_flow.append(self.get_timeline_feed(["cold_start_fetch"]))
         return all(check_flow)
 
-    def get_timeline_feed(self, options: List[Dict] = ["pull_to_refresh"]) -> Dict:
+    async def get_timeline_feed(self, options: List[Dict] = ["pull_to_refresh"]) -> Dict:
         """
         Get your timeline feed
 
@@ -212,11 +212,11 @@ class PostLoginFlowMixin:
         #     data["push_disabled"] = "true"
         # if "recovered_from_crash" in options:
         #     data["recovered_from_crash"] = "1"
-        return self.private_request(
+        return await self.private_request(
             "feed/timeline/", json.dumps(data), with_signature=False, headers=headers
         )
 
-    def get_reels_tray_feed(self, reason: str = "pull_to_refresh") -> Dict:
+    async def get_reels_tray_feed(self, reason: str = "pull_to_refresh") -> Dict:
         """
         Get your reels tray feed
 
@@ -241,7 +241,7 @@ class PostLoginFlowMixin:
             # "_csrftoken": self.token,
             "_uuid": self.uuid,
         }
-        return self.private_request("feed/reels_tray/", data)
+        return await self.private_request("feed/reels_tray/", data)
 
 
 class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
@@ -271,6 +271,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
     def __init__(self):
         self.user_agent = None
         self.settings = None
+        self.cookies = {}
 
     def init(self) -> bool:
         """
@@ -337,7 +338,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         self.cookie_dict["ds_user_id"] = user.pk
         return True
 
-    def login(self, username: str, password: str, relogin: bool = False, verification_code: str = '') -> bool:
+    async def login(self, username: str, password: str, relogin: bool = False, verification_code: str = '') -> bool:
         """
         Login
 
@@ -371,7 +372,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         if self.user_id and not relogin:
             return True  # already login
         try:
-            self.pre_login_flow()
+            await self.pre_login_flow()
         except (PleaseWaitFewMinutes, ClientThrottledError):
             self.logger.warning('Ignore 429: Continue login')
             # The instagram application ignores this error
@@ -390,7 +391,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             "login_attempt_count": "0"
         }
         try:
-            logged = self.private_request("accounts/login/", data, login=True)
+            logged = await self.private_request("accounts/login/", data, login=True)
             self.authorization_data = self.parse_authorization(
                 self.last_response.headers.get('ig-set-authorization')
             )
@@ -408,18 +409,21 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
                 "username": username,
                 "trust_this_device": "0",
                 "guid": self.uuid,
-                "device_id": self.uuid,
+                "device_id": self.android_device_id,
                 "waterfall_id": str(uuid4()),
                 "verification_method": "3"
             }
             logged = self.private_request("accounts/two_factor_login/", data, login=True)
+            self.authorization_data = self.parse_authorization(
+                self.last_response.headers.get('ig-set-authorization')
+            )
         if logged:
-            self.login_flow()
+            await self.login_flow()
             self.last_login = time.time()
             return True
         return False
 
-    def one_tap_app_login(self, user_id: int, nonce: str) -> bool:
+    async def one_tap_app_login(self, user_id: int, nonce: str) -> bool:
         """One tap login emulation
 
         Parameters
@@ -444,7 +448,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             "login_nonce": nonce,
             "_csrftoken": self.token
         }
-        return self.private_request("accounts/one_tap_app_login/", data)
+        return await self.private_request("accounts/one_tap_app_login/", data)
 
     def relogin(self) -> bool:
         """
@@ -459,7 +463,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
 
     @property
     def cookie_dict(self) -> dict:
-        return self.private.cookies.get_dict()
+        return self.cookies
 
     @property
     def sessionid(self) -> str:
@@ -693,7 +697,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
         """
         return "android-%s" % hashlib.md5(str(time.time()).encode()).hexdigest()[:16]
 
-    def expose(self) -> Dict:
+    async def expose(self) -> Dict:
         """
         Helper to expose
 
@@ -703,7 +707,7 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             A dictionary of response from the call
         """
         data = {"id": self.uuid, "experiment": "ig_android_profile_contextual_feed"}
-        return self.private_request("qe/expose/", self.with_default_data(data))
+        return await self.private_request("qe/expose/", self.with_default_data(data))
 
     def with_default_data(self, data: Dict) -> Dict:
         """
@@ -784,8 +788,8 @@ class LoginMixin(PreLoginFlowMixin, PostLoginFlowMixin):
             return True
         return False
 
-    def logout(self) -> bool:
-        result = self.private_request(
+    async def logout(self) -> bool:
+        result = await self.private_request(
             "accounts/logout/",
             {'one_tap_app_login': True}
         )

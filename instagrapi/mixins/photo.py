@@ -1,13 +1,15 @@
 import json
 import random
 import shutil
-import time
+import asyncio, time
 from pathlib import Path
 from typing import Dict, List
 from urllib.parse import urlparse
 from uuid import uuid4
 
-import requests
+from requests.sessions import session
+
+from aiohttp import ClientSession
 
 from instagrapi import config
 from instagrapi.exceptions import (
@@ -33,7 +35,8 @@ from instagrapi.utils import date_time_original, dumps
 try:
     from PIL import Image
 except ImportError:
-    raise Exception("You don't have PIL installed. Please install PIL or Pillow>=8.1.1")
+    Image = None
+    #raise Exception("You don't have PIL installed. Please install PIL or Pillow>=8.1.1")
 
 
 class DownloadPhotoMixin:
@@ -41,7 +44,7 @@ class DownloadPhotoMixin:
     Helpers for downloading photo
     """
 
-    def photo_download(self, media_pk: int, folder: Path = "") -> Path:
+    async def photo_download(self, media_pk: int, folder: Path = "") -> Path:
         """
         Download photo using media pk
 
@@ -63,9 +66,9 @@ class DownloadPhotoMixin:
         filename = "{username}_{media_pk}".format(
             username=media.user.username, media_pk=media_pk
         )
-        return self.photo_download_by_url(media.thumbnail_url, filename, folder)
+        return await self.photo_download_by_url(media.thumbnail_url, filename, folder)
 
-    def photo_download_by_url(
+    async def photo_download_by_url(
         self, url: str, filename: str = "", folder: Path = ""
     ) -> Path:
         """
@@ -89,11 +92,12 @@ class DownloadPhotoMixin:
         fname = urlparse(url).path.rsplit("/", 1)[1]
         filename = "%s.%s" % (filename, fname.rsplit(".", 1)[1]) if filename else fname
         path = Path(folder) / filename
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        with open(path, "wb") as f:
-            response.raw.decode_content = True
-            shutil.copyfileobj(response.raw, f)
+        async with ClientSession() as session:
+            async with session.get(url, stream=True) as response:
+                response.raise_for_status()
+                with open(path, "wb") as f:
+                    response.raw.decode_content = True
+                    shutil.copyfileobj(response.raw, f)
         return path.resolve()
 
 
@@ -102,7 +106,7 @@ class UploadPhotoMixin:
     Helpers for downloading photo
     """
 
-    def photo_rupload(
+    async def photo_rupload(
         self, path: Path, upload_id: str = "", to_album: bool = False
     ) -> tuple:
         """
@@ -155,14 +159,15 @@ class UploadPhotoMixin:
             "Content-Type": "application/octet-stream",
             "Content-Length": photo_len,
         }
-        response = self.private.post(
+        async with ClientSession() as session:
+            async with session.post(
             "https://{domain}/rupload_igphoto/{name}".format(
                 domain=config.API_DOMAIN, name=upload_name
             ),
             data=photo_data,
             headers=headers,
-        )
-        self.request_log(response)
+           ) as response:
+               self.request_log(response)
         if response.status_code != 200:
             self.logger.error(
                 "Photo Upload failed with the following response: %s", response
@@ -173,7 +178,7 @@ class UploadPhotoMixin:
             width, height = im.size
         return upload_id, width, height
 
-    def photo_upload(
+    async def photo_upload(
         self,
         path: Path,
         caption: str,
@@ -206,11 +211,11 @@ class UploadPhotoMixin:
             An object of Media class
         """
         path = Path(path)
-        upload_id, width, height = self.photo_rupload(path, upload_id)
+        upload_id, width, height = await self.photo_rupload(path, upload_id)
         for attempt in range(10):
             self.logger.debug(f"Attempt #{attempt} to configure Photo: {path}")
-            time.sleep(3)
-            if self.photo_configure(
+            await asyncio.sleep(3)
+            if await self.photo_configure(
                 upload_id, width, height, caption, usertags, location,
                 extra_data=extra_data
             ):
@@ -221,7 +226,7 @@ class UploadPhotoMixin:
             response=self.last_response, **self.last_json
         )
 
-    def photo_configure(
+    async def photo_configure(
         self,
         upload_id: str,
         width: int,
@@ -286,9 +291,9 @@ class UploadPhotoMixin:
             "extra": {"source_width": width, "source_height": height},
             **extra_data
         }
-        return self.private_request("media/configure/", self.with_default_data(data))
+        return await self.private_request("media/configure/", self.with_default_data(data))
 
-    def photo_upload_to_story(
+    async def photo_upload_to_story(
         self,
         path: Path,
         caption: str = "",
@@ -336,8 +341,8 @@ class UploadPhotoMixin:
         upload_id, width, height = self.photo_rupload(path, upload_id)
         for attempt in range(10):
             self.logger.debug(f"Attempt #{attempt} to configure Photo: {path}")
-            time.sleep(3)
-            if self.photo_configure_to_story(
+            await asyncio.sleep(3)
+            if await self.photo_configure_to_story(
                 upload_id,
                 width,
                 height,
@@ -365,7 +370,7 @@ class UploadPhotoMixin:
             response=self.last_response, **self.last_json
         )
 
-    def photo_configure_to_story(
+    async def photo_configure_to_story(
         self,
         upload_id: str,
         width: int,
@@ -542,6 +547,6 @@ class UploadPhotoMixin:
         data["tap_models"] = dumps(tap_models)
         data["static_models"] = dumps(static_models)
         data["story_sticker_ids"] = dumps(story_sticker_ids)
-        return self.private_request(
+        return await self.private_request(
             "media/configure_to_story/", self.with_default_data(data)
         )

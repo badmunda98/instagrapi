@@ -1,4 +1,4 @@
-import time
+import asyncio
 from typing import Dict, List
 
 from instagrapi.exceptions import ClientError, MediaError, UserError
@@ -30,7 +30,7 @@ class InsightsMixin:
     Helper class to get insights
     """
 
-    def insights_media_feed_all(
+    async def insights_media_feed_all(
         self,
         post_type: POST_TYPE = "ALL",
         time_frame: TIME_FRAME = "TWO_YEARS",
@@ -90,7 +90,7 @@ class InsightsMixin:
         while True:
             if cursor:
                 query_params["cursor"] = cursor
-            result = self.private_request(
+            result = await self.private_request(
                 "ads/graphql/",
                 self.with_query_params(data, query_params),
             )
@@ -112,7 +112,7 @@ class InsightsMixin:
                 break
             if count and len(medias) >= count:
                 break
-            time.sleep(sleep)
+            await asyncio.sleep(sleep)
         if count:
             medias = medias[:count]
         return medias
@@ -121,7 +121,7 @@ class InsightsMixin:
     Helpers for getting insights for media
     """
 
-    def insights_account(self) -> Dict:
+    async def insights_account(self) -> Dict:
         """
         Get insights for account
 
@@ -147,7 +147,7 @@ class InsightsMixin:
             "query_params": {"access_token": "", "id": self.user_id},
         }
 
-        result = self.private_request(
+        result = await self.private_request(
             "ads/graphql/",
             self.with_query_params(data, query_params),
         )
@@ -156,7 +156,7 @@ class InsightsMixin:
             raise UserError("Account is not business account", **self.last_json)
         return res
 
-    def insights_media(self, media_pk: int) -> Dict:
+    async def insights_media(self, media_pk: int) -> Dict:
         """
         Get insights data for media
 
@@ -184,7 +184,7 @@ class InsightsMixin:
             "query_params": {"access_token": "", "id": media_pk},
         }
         try:
-            result = self.private_request(
+            result = await self.private_request(
                 "ads/graphql/",
                 self.with_query_params(data, query_params),
             )

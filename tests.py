@@ -306,7 +306,7 @@ class ClientDeviceTestCase(ClientPrivateTestCase):
         self.assertDictEqual(device, settings['device_settings'])
         self.assertEqual(user_agent, settings['user_agent'])
         self.cl.user_info_by_username_v1('adw0rd')
-        request_user_agent = self.cl.last_response.request.headers.get('User-Agent')
+        request_user_agent = self.cl.last_response.request.method.headers.get('User-Agent')
         self.assertEqual(user_agent, request_user_agent)
 
 

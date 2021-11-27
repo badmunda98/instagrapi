@@ -1,7 +1,7 @@
 import hashlib
 import json
-import time
 import asyncio
+import asyncio, time
 from enum import Enum
 from typing import Dict
 import requests
@@ -41,7 +41,7 @@ class ChallengeResolveMixin:
     Helpers for resolving login challenge
     """
 
-    def challenge_resolve(self, last_json: Dict) -> bool:
+    async def challenge_resolve(self, last_json: Dict) -> bool:
         """
         Start challenge resolve
 
@@ -71,21 +71,15 @@ class ChallengeResolveMixin:
             # not enough values to unpack (expected 2, got 1)
             params = {}
         try:
-            self._send_private_request(challenge_url[1:], params=params)
+            await self._send_private_request(challenge_url[1:], params=params)
         except ChallengeRequired:
             assert self.last_json["message"] == "challenge_required", self.last_json
             return self.challenge_resolve_contact_form(challenge_url)
-        return self.challenge_resolve_simple(challenge_url)
+        return await self.challenge_resolve_simple(challenge_url)
 
-    def challenge_resolve_contact_form(self, challenge_url: str) -> bool:
+    async def challenge_resolve_contact_form(self, challenge_url: str) -> bool:
         """
         Start challenge resolve
-
-        Помогите нам удостовериться, что вы владеете этим аккаунтом
-        > CODE
-        Верна ли информация вашего профиля?
-        Мы заметили подозрительные действия в вашем аккаунте.
-        В целях безопасности сообщите, верна ли информация вашего профиля.
         > I AGREE
 
         Help us make sure you own this account
@@ -133,7 +127,7 @@ class ChallengeResolveMixin:
         for key, value in self.private.cookies.items():
             if key in ["mid", "csrftoken"]:
                 session.cookies.set(key, value)
-        time.sleep(WAIT_SECONDS)
+        await asyncio.sleep(WAIT_SECONDS)
         result = session.get(challenge_url)  # render html form
         session.headers.update(
             {
@@ -150,12 +144,12 @@ class ChallengeResolveMixin:
                 "referer": challenge_url,
             }
         )
-        time.sleep(WAIT_SECONDS)
+        await asyncio.sleep(WAIT_SECONDS)
         choice = ChallengeChoice.EMAIL
         result = session.post(challenge_url, {"choice": choice})
         result = result.json()
         for retry in range(8):
-            time.sleep(WAIT_SECONDS)
+            await asyncio.sleep(WAIT_SECONDS)
             try:
                 # FORM TO ENTER CODE
                 result = self.handle_challenge_result(result)
@@ -187,12 +181,12 @@ class ChallengeResolveMixin:
         ), result
         for retry_code in range(5):
             for attempt in range(1, 11):
-                code = self.challenge_code_handler(self.username, choice)
+                code = await self.challenge_code_handler(self.username, choice)
                 if code:
                     break
-                time.sleep(WAIT_SECONDS * attempt)
+                await asyncio.sleep(WAIT_SECONDS * attempt)
             # SEND CODE
-            time.sleep(WAIT_SECONDS)
+            await asyncio.sleep(WAIT_SECONDS)
             result = session.post(challenge_url, {"security_code": code}).json()
             result = result.get("challenge", result)
             if (
@@ -217,7 +211,7 @@ class ChallengeResolveMixin:
             assert (
                 not detail or detail in details
             ), 'ChallengeResolve: Data invalid: "%s" not in %s' % (detail, details)
-        time.sleep(WAIT_SECONDS)
+        await asyncio.sleep(WAIT_SECONDS)
         result = session.post(
             "https://i.instagram.com%s" % result.get("navigation").get("forward"),
             {
@@ -256,9 +250,7 @@ class ChallengeResolveMixin:
         messages = []
         if "challenge" in challenge:
             """
-            Иногда в JSON есть вложенность,
-            вместо {challege_object}
-            приходит {"challenge": {challenge_object}}
+             {"challenge": {challenge_object}}
             Sometimes there is nesting in JSON,
             instead of {challege_object}
             comes {"challenge": {challenge_object}}
@@ -267,8 +259,6 @@ class ChallengeResolveMixin:
         challenge_type = challenge.get("challengeType")
         if challenge_type == "SelectContactPointRecoveryForm":
             """
-            Помогите нам удостовериться, что вы владеете этим аккаунтом
-            Чтобы защитить свой аккаунт, запросите помощь со входом.
             {'message': '',
             'challenge': {'challengeType': 'SelectContactPointRecoveryForm',
             'errors': ['Select a valid choice. 1 is not one of the available choices.'],
@@ -308,7 +298,7 @@ class ChallengeResolveMixin:
             {'message': '',
             'challenge': {
             'challengeType': 'RecaptchaChallengeForm',
-            'errors': ['Неправильная Captcha. Попробуйте еще раз.'],
+            'errors': ['.'],
             'experiments': {},
             'extraData': None,
             'fields': {'g-recaptcha-response': 'None',
@@ -344,10 +334,9 @@ class ChallengeResolveMixin:
             raise ChallengeRedirection()
         return challenge
 
-    def challenge_resolve_simple(self, challenge_url: str) -> bool:
+    async def challenge_resolve_simple(self, challenge_url: str) -> bool:
         """
         Old type (through private api) challenge resolver
-        Помогите нам удостовериться, что вы владеете этим аккаунтом
 
         Parameters
         ----------
@@ -362,7 +351,7 @@ class ChallengeResolveMixin:
         step_name = self.last_json.get("step_name", "")
         if step_name == "delta_login_review":
             # IT WAS ME (by GEO)
-            self._send_private_request(challenge_url, {"choice": "0"})
+            await self._send_private_request(challenge_url, {"choice": "0"})
             return True
         elif step_name in ("verify_email", "select_verify_method"):
             if step_name == "select_verify_method":
@@ -382,19 +371,19 @@ class ChallengeResolveMixin:
                 steps = self.last_json["step_data"].keys()
                 challenge_url = challenge_url[1:]
                 if "email" in steps:
-                    self._send_private_request(challenge_url, {"choice": ChallengeChoice.EMAIL})
+                    await self._send_private_request(challenge_url, {"choice": ChallengeChoice.EMAIL})
                 elif "phone_number" in steps:
-                    self._send_private_request(challenge_url, {"choice": ChallengeChoice.SMS})
+                    await self._send_private_request(challenge_url, {"choice": ChallengeChoice.SMS})
                 else:
                     raise ChallengeError(f'ChallengeResolve: Choice "email" or "phone_number" (sms) not available to this account {self.last_json}')
             wait_seconds = 5
             for attempt in range(24):
-                code = self.challenge_code_handler(self.username, ChallengeChoice.EMAIL)
+                code = await self.challenge_code_handler(self.username, ChallengeChoice.EMAIL)
                 if code:
                     break
-                time.sleep(wait_seconds)
+                await asyncio.sleep(wait_seconds)
             print(f'Code entered "{code}" for {self.username} ({attempt} attempts by {wait_seconds} seconds)')
-            self._send_private_request(challenge_url, {"security_code": code})
+            await self._send_private_request(challenge_url, {"security_code": code})
             # assert 'logged_in_user' in client.last_json
             assert self.last_json.get("action", "") == "close"
             assert self.last_json.get("status", "") == "ok"
@@ -417,7 +406,7 @@ class ChallengeResolveMixin:
                 pwd = self.change_password_handler(self.username)
                 if pwd:
                     break
-                time.sleep(wait_seconds)
+                await asyncio.sleep(wait_seconds)
             print(f'Password entered "{pwd}" for {self.username} ({attempt} attempts by {wait_seconds} seconds)')
             return self.bloks_change_password(pwd, self.last_json['challenge_context'])
         elif step_name == "selfie_captcha":

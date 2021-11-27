@@ -2,7 +2,7 @@ import subprocess
 import shlex
 import json
 import random
-import time
+import asyncio, time
 from pathlib import Path
 from typing import Dict, List
 from uuid import uuid4
@@ -16,7 +16,8 @@ from instagrapi.utils import date_time_original
 try:
     from PIL import Image
 except ImportError:
-    raise Exception("You don't have PIL installed. Please install PIL or Pillow>=8.1.1")
+    Image = None
+    #raise Exception("You don't have PIL installed. Please install PIL or Pillow>=8.1.1")
 
 
 class DownloadIGTVMixin:
@@ -68,7 +69,7 @@ class UploadIGTVMixin:
     Helpers to upload IGTV videos
     """
 
-    def igtv_upload(
+    async def igtv_upload(
         self,
         path: Path,
         title: str,
@@ -170,7 +171,7 @@ class UploadIGTVMixin:
         self.igtv_composer_session_id = self.generate_uuid()
         for attempt in range(50):
             self.logger.debug(f"Attempt #{attempt} to configure IGTV: {path}")
-            time.sleep(configure_timeout)
+            await asyncio.sleep(configure_timeout)
             try:
                 configured = self.igtv_configure(
                     upload_id,
@@ -190,7 +191,7 @@ class UploadIGTVMixin:
                     Response 202 status:
                     {"message": "Transcode not finished yet.", "status": "fail"}
                     """
-                    time.sleep(configure_timeout)
+                    await asyncio.sleep(configure_timeout)
                     continue
                 raise e
             else:
@@ -200,7 +201,7 @@ class UploadIGTVMixin:
                     return extract_media_v1(media)
         raise IGTVConfigureError(response=self.last_response, **self.last_json)
 
-    def igtv_configure(
+    async def igtv_configure(
         self,
         upload_id: str,
         thumbnail: Path,
@@ -270,7 +271,7 @@ class UploadIGTVMixin:
             "poster_frame_index": 70,
             **extra_data
         }
-        return self.private_request(
+        return await self.private_request(
             "media/configure_to_igtv/?video=1",
             self.with_default_data(data),
             with_signature=True,

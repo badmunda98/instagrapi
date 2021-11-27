@@ -1,4 +1,4 @@
-from datetime import timedelta, tzinfo
+from datetime import asynciodelta, tzinfo
 
 
 class CET(tzinfo):

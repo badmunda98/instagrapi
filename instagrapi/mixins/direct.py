@@ -1,6 +1,6 @@
 import random
 import re
-import time
+import asyncio
 from pathlib import Path
 from typing import List, Optional
 
@@ -34,7 +34,7 @@ class DirectMixin:
     Helpers for managing Direct Messaging
     """
 
-    def direct_threads(self, amount: int = 20, selected_filter: SELECTED_FILTER = "",
+    async def direct_threads(self, amount: int = 20, selected_filter: SELECTED_FILTER = "",
                        thread_message_limit: Optional[int] = None) -> List[DirectThread]:
         """
         Get direct message threads
@@ -73,7 +73,7 @@ class DirectMixin:
         while True:
             if cursor:
                 params["cursor"] = cursor
-            result = self.private_request("direct_v2/inbox/", params=params)
+            result = await self.private_request("direct_v2/inbox/", params=params)
             inbox = result.get("inbox", {})
             for thread in inbox.get("threads", []):
                 threads.append(extract_direct_thread(thread))
@@ -84,7 +84,7 @@ class DirectMixin:
             threads = threads[:amount]
         return threads
 
-    def direct_pending_inbox(self, amount: int = 20) -> List[DirectThread]:
+    async def direct_pending_inbox(self, amount: int = 20) -> List[DirectThread]:
         """
         Get direct message pending threads
 
@@ -109,7 +109,7 @@ class DirectMixin:
         while True:
             if cursor:
                 params["cursor"] = cursor
-            result = self.private_request("direct_v2/pending_inbox/", params=params)
+            result = await self.private_request("direct_v2/pending_inbox/", params=params)
             inbox = result.get("inbox", {})
             for thread in inbox.get("threads", []):
                 threads.append(extract_direct_thread(thread))
@@ -120,7 +120,7 @@ class DirectMixin:
             threads = threads[:amount]
         return threads
 
-    def direct_thread(self, thread_id: int, amount: int = 20) -> DirectThread:
+    async def direct_thread(self, thread_id: int, amount: int = 20) -> DirectThread:
         """
         Get all the information about a Direct Message thread
 
@@ -150,7 +150,7 @@ class DirectMixin:
             if cursor:
                 params["cursor"] = cursor
             try:
-                result = self.private_request(
+                result = await self.private_request(
                     f"direct_v2/threads/{thread_id}/", params=params
                 )
             except ClientNotFoundError as e:
@@ -206,7 +206,7 @@ class DirectMixin:
         assert self.user_id, "Login required"
         return self.direct_send(text, [], [int(thread_id)])
 
-    def direct_send(self, text: str, user_ids: List[int] = [], thread_ids: List[int] = []) -> DirectMessage:
+    async def direct_send(self, text: str, user_ids: List[int] = [], thread_ids: List[int] = []) -> DirectMessage:
         """
         Send a direct message to list of users or threads
 
@@ -249,7 +249,7 @@ class DirectMixin:
             kwargs["thread_ids"] = dumps([int(tid) for tid in thread_ids])
         if user_ids:
             kwargs["recipient_users"] = dumps([[int(uid) for uid in user_ids]])
-        result = self.private_request(
+        result = await self.private_request(
             f"direct_v2/threads/broadcast/{method}/",
             data=self.with_default_data(kwargs),
             with_signature=False
@@ -296,7 +296,7 @@ class DirectMixin:
         """
         return self.direct_send_file(path, user_ids, thread_ids, content_type='video')
 
-    def direct_send_file(self, path: Path, user_ids: List[int] = [], thread_ids: List[int] = [], content_type: str = 'photo') -> DirectMessage:
+    async def direct_send_file(self, path: Path, user_ids: List[int] = [], thread_ids: List[int] = [], content_type: str = 'photo') -> DirectMessage:
         """
         Send a direct file to list of users or threads
 
@@ -347,14 +347,14 @@ class DirectMixin:
         upload_id, width, height = getattr(self, f'{content_type}_rupload')(path, upload_id, **kwargs)[:3]
         data['upload_id'] = upload_id
         # data['content_type'] = content_type
-        result = self.private_request(
+        result = await self.private_request(
             f"direct_v2/threads/broadcast/{method}/",
             data=self.with_default_data(data),
             with_signature=False,
         )
         return extract_direct_message(result["payload"])
 
-    def direct_send_seen(self, thread_id: int) -> DirectResponse:
+    async def direct_send_seen(self, thread_id: int) -> DirectResponse:
         """
         Send seen to thread
 
@@ -370,14 +370,14 @@ class DirectMixin:
         data = {}
 
         thread = self.direct_thread(thread_id=thread_id)
-        result = self.private_request(
+        result = await self.private_request(
             f"direct_v2/threads/{thread_id}/items/{thread.messages[0].id}/seen/",
             data=self.with_default_data(data),
             with_signature=False,
         )
         return extract_direct_response(result)
 
-    def direct_search(self, query: str) -> List[DirectShortThread]:
+    async def direct_search(self, query: str) -> List[DirectShortThread]:
         """
         Search threads by query
 
@@ -391,7 +391,7 @@ class DirectMixin:
         List[DirectShortThread]
             List of short version of DirectThread
         """
-        result = self.private_request(
+        result = await self.private_request(
             "direct_v2/ranked_recipients/",
             params={"mode": "raven", "show_threads": "true", "query": str(query)}
         )
@@ -401,7 +401,7 @@ class DirectMixin:
             if 'thread' in item
         ]
 
-    def direct_thread_by_participants(self, user_ids: List[int]) -> DirectThread:
+    async def direct_thread_by_participants(self, user_ids: List[int]) -> DirectThread:
         """
         Get direct thread by participants
 
@@ -416,7 +416,7 @@ class DirectMixin:
             An object of DirectThread
         """
         recipient_users = dumps([int(uid) for uid in user_ids])
-        result = self.private_request(
+        result = await self.private_request(
             "direct_v2/threads/get_by_participants/",
             params={"recipient_users": recipient_users, "seq_id": 2580572, "limit": 20}
         )
@@ -428,7 +428,7 @@ class DirectMixin:
             )
         return extract_direct_thread(result['thread'])
 
-    def direct_thread_hide(self, thread_id: int) -> bool:
+    async def direct_thread_hide(self, thread_id: int) -> bool:
         """
         Hide (delete) a thread
         When you click delete, Instagram hides a thread
@@ -446,13 +446,13 @@ class DirectMixin:
         data = self.with_default_data({})
         data.pop('_uid', None)
         data.pop('device_id', None)
-        result = self.private_request(
+        result = await self.private_request(
             f"direct_v2/threads/{thread_id}/hide/",
             data=data
         )
         return result["status"] == "ok"
 
-    def direct_media_share(self, media_id: str, user_ids: List[int]) -> DirectMessage:
+    async def direct_media_share(self, media_id: str, user_ids: List[int]) -> DirectMessage:
         """
         Share a media to list of users
 
@@ -483,7 +483,7 @@ class DirectMixin:
             'nav_chain': '1VL:feed_timeline:1,1VL:feed_timeline:2,1VL:feed_timeline:5,DirectShareSheetFragment:direct_reshare_sheet:6',
             'offline_threading_id': token,
         }
-        result = self.private_request(
+        result = await self.private_request(
             "direct_v2/threads/broadcast/media_share/",
             # params={'media_type': 'video'},
             data=self.with_default_data(data),
@@ -491,7 +491,7 @@ class DirectMixin:
         )
         return extract_direct_message(result["payload"])
 
-    def direct_story_share(self, story_id: str, user_ids: List[int] = [], thread_ids: List[int] = []) -> DirectMessage:
+    async def direct_story_share(self, story_id: str, user_ids: List[int] = [], thread_ids: List[int] = []) -> DirectMessage:
         """
         Share a story to list of users
 
@@ -530,7 +530,7 @@ class DirectMixin:
             data["recipient_users"] = dumps([[int(uid) for uid in user_ids]])
         if thread_ids:
             data["thread_ids"] = dumps([int(tid) for tid in thread_ids])
-        result = self.private_request(
+        result = await self.private_request(
             "direct_v2/threads/broadcast/story_share/",
             # params={'story_type': 'video'},
             data=self.with_default_data(data),
@@ -538,7 +538,7 @@ class DirectMixin:
         )
         return extract_direct_message(result["payload"])
 
-    def direct_thread_mark_unread(self, thread_id: int) -> bool:
+    async def direct_thread_mark_unread(self, thread_id: int) -> bool:
         """
         Mark a thread as unread
 
@@ -555,13 +555,13 @@ class DirectMixin:
         data = self.with_default_data({})
         data.pop('_uid', None)
         data.pop('device_id', None)
-        result = self.private_request(
+        result = await self.private_request(
             f"direct_v2/threads/{thread_id}/mark_unread/",
             data=data
         )
         return result["status"] == "ok"
 
-    def direct_message_delete(self, thread_id: int, message_id: int) -> bool:
+    async def direct_message_delete(self, thread_id: int, message_id: int) -> bool:
         """
         Delete a message from thread
 
@@ -583,13 +583,13 @@ class DirectMixin:
         data['is_shh_mode'] = 0
         data['send_attribution'] = 'direct_thread'
         data['original_message_client_context'] = self.generate_mutation_token()
-        result = self.private_request(
+        result = await self.private_request(
             f"direct_v2/threads/{thread_id}/items/{message_id}/delete/",
             data=data
         )
         return result["status"] == "ok"
 
-    def direct_thread_mute(self, thread_id: int, revert: bool = False) -> bool:
+    async def direct_thread_mute(self, thread_id: int, revert: bool = False) -> bool:
         """
         Mute the thread
 
@@ -606,7 +606,7 @@ class DirectMixin:
             A boolean value
         """
         name = "unmute" if revert else "mute"
-        result = self.private_request(
+        result = await self.private_request(
             f"direct_v2/threads/{thread_id}/{name}/",
             data={'_uuid': self.uuid}
         )
@@ -628,7 +628,7 @@ class DirectMixin:
         """
         return self.direct_thread_mute(thread_id, revert=True)
 
-    def direct_thread_mute_video_call(self, thread_id: int, revert: bool = False) -> bool:
+    async def direct_thread_mute_video_call(self, thread_id: int, revert: bool = False) -> bool:
         """
         Mute video call for the thread
 
@@ -645,7 +645,7 @@ class DirectMixin:
             A boolean value
         """
         name = "unmute_video_call" if revert else "mute_video_call"
-        result = self.private_request(
+        result = await self.private_request(
             f"direct_v2/threads/{thread_id}/{name}/",
             data={'_uuid': self.uuid}
         )

@@ -21,7 +21,8 @@ requirements = [
     'requests<3.0,>=2.25.1',
     'PySocks==1.7.1',
     'pydantic==1.8.2',
-    'pycryptodomex==3.9.9'
+    'pycryptodomex==3.9.9',
+    'aiohttp'
 ]
 # requirements = [
 #     line.strip()
@@ -29,12 +30,12 @@ requirements = [
 # ]
 
 setup(
-    name='instagrapi',
+    name='instagrapi-async',
     version='1.15.19',
     author='Mikhail Andreev',
     author_email='x11org@gmail.com',
     license='MIT',
-    url='https://github.com/adw0rd/instagrapi',
+    url='https://github.com/New-dev0/instagrapi',
     install_requires=requirements,
     keywords=[
         'instagram private api', 'instagram-private-api', 'instagram api', 'instagram-api', 'instagram',

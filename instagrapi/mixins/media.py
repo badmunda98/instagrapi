@@ -1,6 +1,6 @@
 import json
 import random
-import time
+import asyncio
 from copy import deepcopy
 from datetime import datetime
 from typing import Dict, List, Tuple
@@ -211,7 +211,7 @@ class MediaMixin:
             ).dict()
         return extract_media_gql(data["shortcode_media"])
 
-    def media_info_v1(self, media_pk: int) -> Media:
+    async def media_info_v1(self, media_pk: int) -> Media:
         """
         Get Media from PK by Private Mobile API
 
@@ -226,7 +226,7 @@ class MediaMixin:
             An object of Media type
         """
         try:
-            result = self.private_request(f"media/{media_pk}/info/")
+            result = await self.private_request(f"media/{media_pk}/info/")
         except ClientNotFoundError as e:
             raise MediaNotFound(e, media_pk=media_pk, **self.last_json)
         except ClientError as e:
@@ -271,7 +271,7 @@ class MediaMixin:
             self._medias_cache[media_pk]
         )  # return copy of cache (dict changes protection)
 
-    def media_delete(self, media_id: str) -> bool:
+    async def media_delete(self, media_id: str) -> bool:
         """
         Delete media by Media ID
 
@@ -287,13 +287,13 @@ class MediaMixin:
         """
         assert self.user_id, "Login required"
         media_id = self.media_id(media_id)
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/delete/", self.with_default_data({"media_id": media_id})
         )
         self._medias_cache.pop(self.media_pk(media_id), None)
         return result.get("did_delete")
 
-    def media_edit(
+    async def media_edit(
         self,
         media_id: str,
         caption: str,
@@ -348,7 +348,7 @@ class MediaMixin:
                 "igtv_ads_toggled_on": "0",
             }
         self._medias_cache.pop(self.media_pk(media_id), None)  # clean cache
-        return self.private_request(
+        return await self.private_request(
             f"media/{media_id}/edit_media/",
             self.with_default_data(data),
         )
@@ -385,7 +385,7 @@ class MediaMixin:
         """
         return extract_media_oembed(self.private_request(f"oembed?url={url}"))
 
-    def media_like(self, media_id: str, revert: bool = False) -> bool:
+    async def media_like(self, media_id: str, revert: bool = False) -> bool:
         """
         Like a media
 
@@ -412,7 +412,7 @@ class MediaMixin:
             "feed_position": str(random.randint(0, 6)),
         }
         name = "unlike" if revert else "like"
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/{name}/", self.with_action_data(data)
         )
         return result["status"] == "ok"
@@ -481,7 +481,7 @@ class MediaMixin:
             end_cursor
         )
 
-    def user_medias_gql(
+    async def user_medias_gql(
         self, user_id: int, amount: int = 0, sleep: int = 2
     ) -> List[Media]:
         """
@@ -520,7 +520,7 @@ class MediaMixin:
                 break
             if amount and len(medias) >= amount:
                 break
-            time.sleep(sleep)
+            await asyncio.sleep(sleep)
         if amount:
             medias = medias[:amount]
         return medias
@@ -679,7 +679,7 @@ class MediaMixin:
             medias = self.user_medias_v1(user_id, amount)
         return medias
 
-    def media_seen(self, media_ids: List[str], skipped_media_ids: List[str] = []):
+    async def media_seen(self, media_ids: List[str], skipped_media_ids: List[str] = []):
         """
         Mark a media as seen
 
@@ -711,13 +711,13 @@ class MediaMixin:
             "live_vods": {},
             "reel_media_skipped": gen(skipped_media_ids)
         }
-        result = self.private_request(
+        result = await self.private_request(
             "/v2/media/seen/?reel=1&live_vod=0",
             self.with_default_data(data)
         )
         return result["status"] == "ok"
 
-    def media_likers(self, media_id: str) -> List[UserShort]:
+    async def media_likers(self, media_id: str) -> List[UserShort]:
         """
         Get user's likers
 
@@ -731,10 +731,10 @@ class MediaMixin:
             List of objects of User type
         """
         media_id = self.media_id(media_id)
-        result = self.private_request(f"media/{media_id}/likers/")
+        result = await self.private_request(f"media/{media_id}/likers/")
         return [extract_user_short(u) for u in result['users']]
 
-    def media_archive(self, media_id: str, revert: bool = False) -> bool:
+    async def media_archive(self, media_id: str, revert: bool = False) -> bool:
         """
         Archive a media
 
@@ -752,7 +752,7 @@ class MediaMixin:
         """
         media_id = self.media_id(media_id)
         name = "undo_only_me" if revert else "only_me"
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/{name}/",
             self.with_action_data({"media_id": media_id})
         )
@@ -774,7 +774,7 @@ class MediaMixin:
         """
         return self.media_archive(media_id, revert=True)
 
-    def usertag_medias_gql(
+    async def usertag_medias_gql(
         self, user_id: int, amount: int = 0, sleep: int = 2
     ) -> List[Media]:
         """
@@ -820,7 +820,7 @@ class MediaMixin:
                 break
             if amount and len(medias) >= amount:
                 break
-            time.sleep(sleep)
+            await asyncio.sleep(sleep)
         if amount:
             medias = medias[:amount]
         return [extract_media_gql(media) for media in medias]

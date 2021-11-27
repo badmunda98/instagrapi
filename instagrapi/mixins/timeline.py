@@ -43,7 +43,7 @@ class ReelsMixin:
         """
         return self.reels_timeline_media("explore_reels", amount, last_media_pk)
 
-    def reels_timeline_media(
+    async def reels_timeline_media(
         self, collection_pk: str, amount: int = 10, last_media_pk: int = 0
     ) -> List[Media]:
         """
@@ -76,7 +76,7 @@ class ReelsMixin:
             if len(total_items) >= float(amount):
                 return total_items[:amount]
             try:
-                result = self.private_request(
+                result = await self.private_request(
                     private_request_endpoint,
                     data = ' ',
                     params={"max_id": next_max_id},

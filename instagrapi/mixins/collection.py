@@ -10,7 +10,7 @@ class CollectionMixin:
     Helpers for collection
     """
 
-    def collections(self) -> List[Collection]:
+    async def collections(self) -> List[Collection]:
         """
         Get collections
 
@@ -23,7 +23,7 @@ class CollectionMixin:
         total_items = []
         while True:
             try:
-                result = self.private_request(
+                result = await self.private_request(
                     "collections/list/",
                     params={
                         "collection_types": '["ALL_MEDIA_AUTO_COLLECTION","PRODUCT_AUTO_COLLECTION","MEDIA"]',
@@ -93,7 +93,7 @@ class CollectionMixin:
         """
         return self.collection_medias("liked", amount, last_media_pk)
 
-    def collection_medias(
+    async def collection_medias(
         self, collection_pk: str, amount: int = 21, last_media_pk: int = 0
     ) -> List[Media]:
         """
@@ -127,7 +127,7 @@ class CollectionMixin:
         found_last_media_pk = False
         while True:
             try:
-                result = self.private_request(
+                result = await self.private_request(
                     private_request_endpoint,
                     params={"include_igtv_preview": "false", "max_id": next_max_id},
                 )
@@ -146,7 +146,7 @@ class CollectionMixin:
             next_max_id = result.get("next_max_id", "")
         return total_items[:amount] if amount else total_items
 
-    def media_save(self, media_id: str, collection_pk: int = None, revert: bool = False) -> bool:
+    async def media_save(self, media_id: str, collection_pk: int = None, revert: bool = False) -> bool:
         """
         Save a media to collection
 
@@ -173,7 +173,7 @@ class CollectionMixin:
         if collection_pk:
             data["added_collection_ids"] = f"[{int(collection_pk)}]"
         name = "unsave" if revert else "save"
-        result = self.private_request(
+        result = await self.private_request(
             f"media/{media_id}/{name}/", self.with_action_data(data)
         )
         return result["status"] == "ok"
