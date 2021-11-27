@@ -17,7 +17,7 @@ class ClientError(Exception):
         super().__init__(self.message, *args, **kwargs)
         if self.response:
             _ = self.response
-            self.code = getattr(response, "status_code", None) or response.status
+            self.code = getattr(self.response, "status_code", None) or response.status
 
 
 class GenericRequestError(ClientError):
